@@ -12,13 +12,14 @@ I have a lot of text documents on my computer in various places (notes, bookmark
 
 ### Usage
 
-Create a file called thsearch.txt in the same folder as thsearch.exe. In this file, on separate lines, use + to include paths, - to exclude, and > to specify the extensions you want.
+Create a file called thsearch.txt in the same folder as thsearch.exe. In this file, on separate lines, use + to include paths (searches all sub directories) , - to exclude, and > to specify the extensions you want.
 
 #### .\thsearch.txt 
 
 ```
-+C:\Folder To\Include
++C:\User\Documents
 -E:\Exclude\me\please
+-node_modules
 >.txt
 >.md
 >.pdf
@@ -36,6 +37,8 @@ Tip: Add it to your path and anytime you want to search your notes, etc, just op
 ### Perfomance
 
 thSearch uses a producer consumer multithreaded approach where a single producer thread finds candidate files and passes these off to "consumer" threads which do the content searching. It will automatically use an ideal number of threads.
+
+Grep / content searching is expensive so the first step is to not waste time on irrelevant files. The power of thSearch is that you search only specific extensions of documents and only in the locations where documents are likely to be.
 
 Starting from the top and going line by line, the program will stop searching a file the moment it finds a match. So the deeper the term is in the file, the longer the time spent. 
 

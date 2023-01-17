@@ -8,7 +8,7 @@ Multithreaded content search of files in specified folders.
 
 ### Why?
 
-I have a lot of text documents on my computer in various places (notes, bookmarks, pds, docxs, etc). I wanted *one* **blazing fast** ⚡ CLI command that would search just the locations and extensions I specify. thSearch uses a producer consumer multithreaded approach where a single producer thread finds candidate files and passes these off to "consumer" threads which do the content searching. It will automatically use an ideal number of threads.
+I have a lot of text documents on my computer in various places (notes, bookmarks, pds, docxs, etc). I wanted *one* **blazing fast** ⚡ CLI command that would search just the locations and extensions I specify (like downloads, documents).
 
 ### Usage
 
@@ -34,6 +34,8 @@ thsearch.exe <search term>
 Tip: Add it to your path and anytime you want to search your notes, etc, just open a termnial and type "thsearch seatchterm"
 
 ### Perfomance
+
+thSearch uses a producer consumer multithreaded approach where a single producer thread finds candidate files and passes these off to "consumer" threads which do the content searching. It will automatically use an ideal number of threads.
 
 Starting from the top and going line by line, the program will stop searching a file the moment it finds a match. So the deeper the term is in the file, the longer the time spent. 
 

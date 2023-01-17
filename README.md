@@ -31,6 +31,8 @@ Then run
 thsearch.exe <search term>
 ```
 
+Tip: Add it to your path and anytime you want to search your notes, etc, just open a termnial and type "thsearch seatchterm"
+
 ### Perfomance
 
 Starting from the top and going line by line, the program will stop searching a file the moment it finds a match. So the deeper the term is in the file, the longer the time spent. 
@@ -42,5 +44,4 @@ I created ~30 gb of random words total across 10,000 files, nested three levels 
 Windows.
 
 Soon: Linux (for now need to build it on linux manually)
-
 

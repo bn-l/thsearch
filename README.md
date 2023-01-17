@@ -1,4 +1,4 @@
-<img src="Assets/icon512.png" alt="icon" style="max-width: 256px;" />
+<img src="Assets/icon.png" alt="logo" />
 
 # thSearch 
 

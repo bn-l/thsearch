@@ -9,6 +9,8 @@ namespace thsearch
         public List<string> ExcludedDirectories { get; private set; }
         public List<string> FileExtensions { get; private set; }
 
+        char dirSeparatorChar = Path.DirectorySeparatorChar;
+
         public ConfigFileParser(string filePath)
         {
             IncludedDirectories = new List<string>();
@@ -23,23 +25,27 @@ namespace thsearch
                     {
                         line = line.Trim();
                     }
-
                     if (string.IsNullOrWhiteSpace(line))
                     {
                         Console.WriteLine("Formatting error, line is empty or whitespace.");
                         Environment.Exit(1);
                     }
-                    else if (line.StartsWith("+"))
+                    if (line.EndsWith(dirSeparatorChar.ToString()))
                     {
-                        IncludedDirectories.Add(Path.GetFullPath(line.Substring(1)));
+                        line = line.TrimEnd(dirSeparatorChar);
+                    }
+
+                    if (line.StartsWith("+"))
+                    {
+                        IncludedDirectories.Add(Path.GetFullPath(line.TrimStart('+')));
                     }
                     else if (line.StartsWith("-"))
                     {
-                        ExcludedDirectories.Add(Path.GetFullPath(line.Substring(1)));
+                        ExcludedDirectories.Add(Path.GetFullPath(line.TrimStart('-')));
                     }
                     else if (line.StartsWith(">"))
                     {
-                        FileExtensions.Add(line.Substring(1));
+                        FileExtensions.Add(line.TrimStart('>'));
                     }
                 }
             }

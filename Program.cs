@@ -19,7 +19,7 @@ class Program
         else if (args.Length == 1)
         {
             searchString = args[0];
-            string currentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
             configPath = Path.Combine(currentDirectory, configName);
         }
         else

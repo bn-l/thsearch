@@ -32,7 +32,7 @@ Then run
 thsearch.exe <search term>
 ```
 
-Tip: Add it to your path and anytime you want to search your notes, etc, just open a termnial and type "thsearch seatchterm"
+Tip: Add it to your path and anytime you want to search your notes, etc, just open a termnial and type "thsearch searchterm"
 
 ### Perfomance
 

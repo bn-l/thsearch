@@ -113,7 +113,7 @@ class Program
         return false;
     }
 
-    static List<string> GetMatchingFiles(string directory, List<string> fileExtensions, List<string> excludedDirectories)
+    static List<string> GetMatchingFiles(string directory, List<string> fileExtensions, List<string> excludedDirs)
     {
         var matchingFiles = new List<string>();
         foreach (string file in Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories))
@@ -121,8 +121,14 @@ class Program
             string extension = Path.GetExtension(file);
             if (fileExtensions.Contains(extension))
             {
-                var fileDirectory = Path.GetDirectoryName(file);
-                if (!excludedDirectories.Contains(fileDirectory))
+                var fileDirectory = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
+                // Issue: 
+                // C:\Users\x230\Desktop\test-text-folder\bad
+                // and
+                // C:\Users\x230\Desktop\test-text-folder\bad with spaces
+                // are the same
+                // if not Any of the elements of excludedDirs are Contained by the path of fileDirectory
+                if (!excludedDirs.Any(excludedDir => fileDirectory.Contains(excludedDir + Path.DirectorySeparatorChar)))
                 {
                     matchingFiles.Add(file);
                 }

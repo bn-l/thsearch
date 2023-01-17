@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "thsearch": {
+      "commandName": "Project",
+      "commandLineArgs": "tomatoes"
+    }
+  }
+}

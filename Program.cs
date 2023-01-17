@@ -122,11 +122,7 @@ class Program
             if (fileExtensions.Contains(extension))
             {
                 var fileDirectory = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
-                // Issue: 
-                // C:\Users\x230\Desktop\test-text-folder\bad
-                // and
-                // C:\Users\x230\Desktop\test-text-folder\bad with spaces
-                // are the same
+
                 // if not Any of the elements of excludedDirs are Contained by the path of fileDirectory
                 if (!excludedDirs.Any(excludedDir => fileDirectory.Contains(excludedDir + Path.DirectorySeparatorChar)))
                 {

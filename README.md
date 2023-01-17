@@ -1,4 +1,4 @@
-<img src="images/icon.png" alt="icon" style="zoom:50%;" />
+<img src="Assets/icon.png" alt="icon" style="zoom:50%;" />
 
 # thSearch 
 

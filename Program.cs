@@ -118,16 +118,14 @@ class Program
         var matchingFiles = new List<string>();
         foreach (string file in Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories))
         {
-            string extension = Path.GetExtension(file);
-            if (fileExtensions.Contains(extension))
-            {
-                var fileDirectory = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
+            var fileDirectory = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
 
-                // if not Any of the elements of excludedDirs are Contained by the path of fileDirectory
-                if (!excludedDirs.Any(excludedDir => fileDirectory.Contains(excludedDir + Path.DirectorySeparatorChar)))
-                {
-                    matchingFiles.Add(file);
-                }
+            bool correctExtension = fileExtensions.Contains(Path.GetExtension(file));
+            bool pathNotExcluded = !excludedDirs.Any(excludedDir => fileDirectory.Contains(excludedDir + Path.DirectorySeparatorChar));
+
+            if (correctExtension && pathNotExcluded)
+            {
+                matchingFiles.Add(file);
             }
         }
         return matchingFiles;

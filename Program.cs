@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Reflection;
 using thsearch;
 
 class Program
@@ -45,14 +44,13 @@ class Program
             // Search for matching file types and add them to the queue
             foreach (string directory in config.IncludedDirectories)
             {
-                if (!config.ExcludedDirectories.Contains(directory))
+                
+                var matchingFiles = GetMatchingFiles(directory, config.FileExtensions, config.ExcludedDirectories);
+                foreach (string file in matchingFiles)
                 {
-                    var matchingFiles = GetMatchingFiles(directory, config.FileExtensions, config.ExcludedDirectories);
-                    foreach (string file in matchingFiles)
-                    {
-                        filesQueue.Enqueue(file);
-                    }
+                    filesQueue.Enqueue(file);
                 }
+
             }
             threadsRunning = false;
         });

@@ -1,9 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using thsearch;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("thsearch.Tests")]
+
 
 class Program
 {
-    static void Main(string[] args)
+    internal static void Main(string[] args)
     {
 
         string searchString;

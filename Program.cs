@@ -1,13 +1,13 @@
 ﻿namespace thsearch;
 
+using System;
 using System.Collections.Concurrent;
-
+using System.Threading.Tasks;
 
 class Program
 {
     internal static void Main(string[] args)
     {
-
         string searchString;
         string configPath;
         string configName = "thsearch.txt";
@@ -28,51 +28,39 @@ class Program
             searchString = args[0];
             configPath = args[1];
         }
+
         var config = new ConfigFileParser(configPath);
-        // rest of the script remains the same
 
-        // Console.WriteLine("searchString: " + searchString);
-        // Console.WriteLine("Included directories: " + string.Join(", ", config.IncludedDirectories));
-        // Console.WriteLine("Excluded directories: " + string.Join(", ", config.ExcludedDirectories));
-        // Console.WriteLine("Extensions: " + string.Join(", ", config.FileExtensions));
+        // Create a shared BlockingCollection for the files
+        var filesQueue = new BlockingCollection<string>();
 
-        // Create a shared queue for the files
-        ConcurrentQueue<string> filesQueue = new ConcurrentQueue<string>();
-
-        bool threadsRunning = true;
-
-        // Create the producer thread
-        var producerThread = new Thread(() =>
+        // Create the producer task
+        var producerTask = Task.Run(() =>
         {
             // Search for matching file types and add them to the queue
             foreach (string directory in config.IncludedDirectories)
             {
-
                 var matchingFiles = GetMatchingFiles(directory, config.FileExtensions, config.ExcludedDirectories);
                 foreach (string file in matchingFiles)
                 {
-                    filesQueue.Enqueue(file);
+                    filesQueue.Add(file);
                 }
-
             }
-            threadsRunning = false;
+            filesQueue.CompleteAdding();
         });
-
-        // Start the producer thread
-        producerThread.Start();
 
         // Get the number of available processors
         int processorCount = Environment.ProcessorCount - 1 | 1;
 
-        // Create the consumer threads
-        var consumerThreads = new List<Thread>();
+        // Create the consumer tasks
+        var consumerTasks = new Task[processorCount];
         for (int i = 0; i < processorCount; i++)
         {
-            var consumerThread = new Thread(() =>
+            consumerTasks[i] = Task.Run(() =>
             {
-                while (threadsRunning || !filesQueue.IsEmpty)
+                while (!filesQueue.IsCompleted)
                 {
-                    if (filesQueue.TryDequeue(out string file))
+                    if (filesQueue.TryTake(out string file, Timeout.Infinite))
                     {
                         // Search for the search string in the file
                         if (FileContainsString(file, searchString))
@@ -80,23 +68,15 @@ class Program
                             Console.WriteLine(file);
                         }
                     }
-
                 }
-
             });
-            consumerThread.Start();
-            consumerThreads.Add(consumerThread);
         }
 
-        // Wait for the producer thread to complete
-        producerThread.Join();
+        // Wait for the producer task to complete
+        producerTask.Wait();
 
-        // Wait for the consumer threads to complete
-        foreach (var consumerThread in consumerThreads)
-        {
-            consumerThread.Join();
-        }
-
+        // Wait for the consumer tasks to complete
+        Task.WaitAll(consumerTasks);
     }
 
     internal static bool FileContainsString(string file, string searchString)

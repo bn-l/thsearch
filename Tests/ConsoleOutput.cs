@@ -13,6 +13,7 @@ class ConsoleOutput : IDisposable
     {
         _stringWriter = new StringWriter();
         _originalOutput = Console.Out;
+        // save original output
         Console.SetOut(_stringWriter);
     }
 

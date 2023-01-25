@@ -1,6 +1,7 @@
 namespace Tests;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics;
 using Tests.Helpers;
 using thsearch;
 
@@ -9,7 +10,8 @@ public class Thsearch_function_tests
 {
 
     private List<string> _foundFiles, _foundExtensions, _includedFiles,_excludedFiles, _includedDirectories, _excludedDirectories;
-    
+
+    public TestContext TestContext { get; set; }
 
     [TestInitialize]
     public void Initialize()
@@ -95,5 +97,55 @@ public class Thsearch_function_tests
         }
     }
 
+    [TestMethod]
+    public void Main_PerformanceTest()
+    {
+        // Arrange
+        var searchString = "test";
+        var configPath = "thsearch.txt";
 
+        // Start the stopwatch
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
+        // Act
+        Program.Main(new string[] { searchString, configPath });
+
+        // Stop the stopwatch
+        stopwatch.Stop();
+
+        // Write the elapsed time to the test results
+        TestContext.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds}ms");
+    }
+
+    [TestMethod]
+    public void TestFileContainsString()
+    {
+        // Arrange
+        string file = Path.GetFullPath(_includedFiles[0]);
+        string searchString = "test";
+
+        // Act
+        bool result = Program.FileContainsString(file, searchString);
+
+        // Assert
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public void TestGetMatchingFiles()
+    {
+        // Arrange
+        string directory = Path.GetFullPath(_includedDirectories[0]);
+        List<string> fileExtensions = _foundExtensions;
+        List<string> excludedDirs = _excludedDirectories.Select(Path.GetFullPath).ToList();
+
+        List<string> expectedOutput = Directory.GetFiles(directory).ToList();
+
+        // Act
+        List<string> output = Program.GetMatchingFiles(directory, fileExtensions, excludedDirs);
+
+        // Assert
+        CollectionAssert.AreEquivalent(expectedOutput, output);
+    }
 }

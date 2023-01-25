@@ -99,7 +99,7 @@ class Program
 
     }
 
-    static bool FileContainsString(string file, string searchString)
+    internal static bool FileContainsString(string file, string searchString)
     {
         using (var stream = new StreamReader(file))
         {
@@ -115,7 +115,7 @@ class Program
         return false;
     }
 
-    static List<string> GetMatchingFiles(string directory, List<string> fileExtensions, List<string> excludedDirs)
+    internal static List<string> GetMatchingFiles(string directory, List<string> fileExtensions, List<string> excludedDirs)
     {
         var matchingFiles = new List<string>();
         foreach (string file in Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories))

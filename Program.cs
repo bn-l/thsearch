@@ -1,8 +1,6 @@
-﻿using System.Collections.Concurrent;
-using thsearch;
-using System.Runtime.CompilerServices;
+﻿namespace thsearch;
 
-[assembly: InternalsVisibleTo("thsearch.Tests")]
+using System.Collections.Concurrent;
 
 
 class Program
@@ -44,11 +42,12 @@ class Program
         bool threadsRunning = true;
 
         // Create the producer thread
-        var producerThread = new Thread(() => {
+        var producerThread = new Thread(() =>
+        {
             // Search for matching file types and add them to the queue
             foreach (string directory in config.IncludedDirectories)
             {
-                
+
                 var matchingFiles = GetMatchingFiles(directory, config.FileExtensions, config.ExcludedDirectories);
                 foreach (string file in matchingFiles)
                 {
@@ -63,13 +62,14 @@ class Program
         producerThread.Start();
 
         // Get the number of available processors
-        int processorCount = Environment.ProcessorCount-1 | 1;
+        int processorCount = Environment.ProcessorCount - 1 | 1;
 
         // Create the consumer threads
         var consumerThreads = new List<Thread>();
         for (int i = 0; i < processorCount; i++)
         {
-            var consumerThread = new Thread(() => {
+            var consumerThread = new Thread(() =>
+            {
                 while (threadsRunning || !filesQueue.IsEmpty)
                 {
                     if (filesQueue.TryDequeue(out string file))

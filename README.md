@@ -1,4 +1,4 @@
-<img src="Assets/icon.png" alt="logo" />
+<img src="thsearch/Assets/icon.png" alt="logo" />
 
 # thSearch 
 

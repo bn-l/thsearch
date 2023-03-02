@@ -3,9 +3,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using System.Globalization;
 
 class Program
 {
+
     internal static void Main(string[] args)
     {
         string searchString;
@@ -66,28 +68,35 @@ class Program
         {
             consumerTasks[i] = Task.Run(() =>
             {
-                while (!filesQueue.IsCompleted)
+                // from the doc: "The enumerator will continue to provide items (if any exist) until IsCompleted returns true"
+                //  if IsCompleted is false the loop blocks until an item becomes
+                foreach (string file in filesQueue.GetConsumingEnumerable())
                 {
-                    if (filesQueue.TryTake(out string file, Timeout.Infinite))
+                    // Search for the search string in the file
+                    if (FileContainsString(file, searchString))
                     {
-                        // Search for the search string in the file
-                        if (FileContainsString(file, searchString))
-                        {
-                            Console.WriteLine(file);
-                        }
+                        Console.WriteLine(file);
                     }
                 }
             });
         }
 
         // Wait for the producer task to complete
-        producerTask.Wait();
+        // producerTask.Wait();
 
         // Wait for the consumer tasks to complete
-        Task.WaitAll(consumerTasks);
+        Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
+    }
+
+    internal static bool CustomContains(string source, string toCheck)
+    {
+        CompareInfo ci = new CultureInfo("en-US").CompareInfo;
+        CompareOptions co = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
+        return ci.IndexOf(source, toCheck, co) != -1;
     }
 
     internal static bool FileContainsString(string file, string searchString)
+
     {
         using (var stream = new StreamReader(file))
         {

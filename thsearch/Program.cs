@@ -10,10 +10,12 @@ class Program
 
     internal static void Main(string[] args)
     {
+
         string searchString;
         string configName = "thsearch";
         string configPath;
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
+
 
         switch (args.Length)
         {
@@ -41,26 +43,29 @@ class Program
 
         ConfigFileParser config = new ConfigFileParser(configPath);
 
+        // in the future could be refactored to be just a Producer type (which FileProducer would inherit) and use polymorphism. Giving more flexibility on grep candidate creation. 
+
+        FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions);
+
         // Create a shared BlockingCollection for the files
-        var filesQueue = new BlockingCollection<string>();
+        var filesQueue = new BlockingCollection<FileModel>();
+
 
         // Create the producer task
         var producerTask = Task.Run(() =>
         {
-            // Search for matching file types and add them to the queue
-            foreach (string directory in config.IncludedDirectories)
+            // file producer is a generator that produces a File
+            foreach (FileModel file in fileProducer)
             {
-                var matchingFiles = GetMatchingFiles(directory, config.FileExtensions, config.ExcludedDirectories);
-                foreach (string file in matchingFiles)
-                {
-                    filesQueue.Add(file);
-                }
+                filesQueue.Add(file);
             }
             filesQueue.CompleteAdding();
         });
 
         // Get the number of available processors
         int processorCount = Environment.ProcessorCount - 1 | 1;
+
+        // FileConsumer instance called with the Index and InverseIndex instances as references
 
         // Create the consumer tasks
         var consumerTasks = new Task[processorCount];
@@ -70,13 +75,10 @@ class Program
             {
                 // from the doc: "The enumerator will continue to provide items (if any exist) until IsCompleted returns true"
                 //  if IsCompleted is false the loop blocks until an item becomes
-                foreach (string file in filesQueue.GetConsumingEnumerable())
+                foreach (FileModel file in filesQueue.GetConsumingEnumerable())
                 {
                     // Search for the search string in the file
-                    if (FileContainsString(file, searchString))
-                    {
-                        Console.WriteLine(file);
-                    }
+                    fileConsumer.Process(file);
                 }
             });
         }

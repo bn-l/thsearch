@@ -68,7 +68,7 @@ public class Thsearch_function_tests
         string[] configLines1 = configDirectoryLines1.Concat(configFileExtLines1).ToArray();
 
         // alt config can just have a different file matcher
-        File.WriteAllLines(@"thsearch.txt", configLines1);
+        FileModel.WriteAllLines(@"thsearch.txt", configLines1);
 
         #endregion
 
@@ -119,7 +119,7 @@ public class Thsearch_function_tests
         string[] configLines2 = configDirectoryLines2.Concat(configFileExtLines2).ToArray();
 
         // alt config can just have a different file matcher
-        File.WriteAllLines(@"thsearch2.txt", configLines2);
+        FileModel.WriteAllLines(@"thsearch2.txt", configLines2);
 
         #endregion
 

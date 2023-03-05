@@ -7,18 +7,22 @@ using System.IO;
 
 // Represents and operates on the FileIndex and the InverseIndex. The InverseIndex is always downstream from the FileIndex. 
 
-class Index {
+class Index 
+{
+    // string path : FileIndexEntry entry
     private ConcurrentDictionary<string, FileIndexEntry> fileIndex;
+    // string stem : InverseIndexEntry entry
     private ConcurrentDictionary<string, InverseIndexEntry> inverseIndex;
     private string fileIndexPath;
     private string inverseIndexPath;
 
     /// <summary>
-    ///  In this contructor if fileIndex.json and inverseIndex.json do not exist it will create them, otherwise it deserializes each
+    ///  Looks worse than it is: In this contructor if fileIndex.json and inverseIndex.json do not exist it will create them, otherwise it deserializes each
     /// </summary>
     /// <param name="fileIndexPath">a path to a json file</param>
     /// <param name="inverseIndexPath">a path to a json file<</param>
-    public Index (string fileIndexPath, string inverseIndexPath) {
+    public Index (string fileIndexPath, string inverseIndexPath) 
+    {
 
         this.fileIndexPath = fileIndexPath;
         this.inverseIndexPath = inverseIndexPath;
@@ -48,25 +52,43 @@ class Index {
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry
     /// </summary>
-    public void Add(FileIndexEntry entry) {
+    public void Add(string path, FileIndexEntry entry) 
+    {
         
+        // key, value, update func
         this.fileIndex.AddOrUpdate(path, entry, (key, value) => entry);
 
-        // Iterates over entry entry[path].stems and AddOrUpdates each this.inverseIndex[stem] by accessing the path and the adding the array index of the stem to the ranks list
-        foreach (var stem in entry.stems) {
-            this.inverseIndex.AddOrUpdate(stem, new InverseIndexEntry(
-                new Dictionary<string, InverseIndexValue> {
-                    
+        // Update the InverseIndex
+        foreach (string stem in entry.Stems) 
+        {
+            this.inverseIndex.AddOrUpdate(
+                // If stem doesn't exist in the InverseIndex, create it by k,v:
+                stem, 
+                new InverseIndexEntry(stem, entry.Stems.IndexOf(stem)),
+                // If it does this function updates it:
+                (key, value) => 
+                {
+                    // update the ranks here
+                    value.Ranks[path].Add(entry.Stems.IndexOf(stem));
+                    return value;
                 }
-            )
+            );
         }
-
-
 
     }
 
-    public void Save() {
-        File.WriteAllText(this.path, JsonSerializer.Serialize(this.index));
+    public void Remove(string pathToRemove) 
+    {
+        this.fileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
+        // Iterates over all all the keys of InverseIndex, and where the inverseIndexEntry.path == pathToRemove it will remove the path and ranks 
+
+    }
+
+
+    public void Save() 
+    {
+        File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.fileIndex));
+        File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.inverseIndex));
     }
 
     

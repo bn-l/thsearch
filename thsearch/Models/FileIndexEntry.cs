@@ -3,8 +3,8 @@ namespace thsearch;
 
 class FileIndexEntry
 {
-   public Dictionary<string, FileIndexValue> Entry { get; set; }
-
+    public DateTime LastModified { get; set; }
+    public List<string> Stems { get; set; }
 }
 
 

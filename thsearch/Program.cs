@@ -49,6 +49,7 @@ class Program
 
         // Create a shared BlockingCollection for the files
         var filesQueue = new BlockingCollection<FileModel>();
+        List<string> foundFiles = new List<string>();
 
 
         // Create the producer task
@@ -58,6 +59,7 @@ class Program
             foreach (FileModel file in fileProducer)
             {
                 filesQueue.Add(file);
+                foundFiles.Add(file.Path);
             }
             filesQueue.CompleteAdding();
         });
@@ -89,6 +91,8 @@ class Program
         // Wait for the consumer tasks to complete
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
     }
+
+    // To be moved all deleted
 
     internal static bool CustomContains(string source, string toCheck)
     {

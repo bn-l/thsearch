@@ -64,12 +64,18 @@ class Index
             this.inverseIndex.AddOrUpdate(
                 // If stem doesn't exist in the InverseIndex, create it by k,v:
                 stem, 
-                new InverseIndexEntry(stem, entry.Stems.IndexOf(stem)),
+                new InverseIndexEntry
+                (
+                    path, new List<int>() { entry.Stems.IndexOf(stem) }
+                ),
                 // If it does this function updates it:
                 (key, value) => 
                 {
                     // update the ranks here
-                    value.Ranks[path].Add(entry.Stems.IndexOf(stem));
+                    //             RanksDict:
+                    //    path:                 ranks:
+                    // "/some/path/dog1.txt": [1, 2, 5, 77, 345],
+                    value.RanksDict[path].Add(entry.Stems.IndexOf(stem));
                     return value;
                 }
             );
@@ -77,11 +83,34 @@ class Index
 
     }
 
+    /// <summary>
+    /// iterates over the set difference of keys in fileIndex minus the set of foundFiles, calling Remove(path) for each
+    /// </summary>
+    /// <param name="foundFiles">A list of found paths</param>
+    public void Prune(List<string> foundFiles)
+    {
+
+        foreach (string path in this.fileIndex.Keys.Except(foundFiles)) 
+        {
+            this.Remove(path);
+        }
+    
+    }
+
     public void Remove(string pathToRemove) 
     {
+        // Remove from the FileIndex
         this.fileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
-        // Iterates over all all the keys of InverseIndex, and where the inverseIndexEntry.path == pathToRemove it will remove the path and ranks 
-
+       
+        // Remove from the InverseIndex
+        // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
+        foreach (var stem in this.inverseIndex) 
+        {
+            if (stem.Value.RanksDict.ContainsKey(pathToRemove)) 
+            {
+                stem.Value.RanksDict.TryRemove(pathToRemove, out List<int> ranks);
+            }
+        }
     }
 
 

@@ -1,30 +1,35 @@
 namespace thsearch;
 
+using System.Collections.Concurrent;
+
 // needs to be a dictionary
 
 class InverseIndexEntry
 {
-    public Dictionary<string, List<int>> Ranks { get; set; }
+    public ConcurrentDictionary<string, List<int>> RanksDict { get; set; }
 
-    public InverseIndexEntry(string path, int index)
+
+    public InverseIndexEntry(string path, List<int> index)
     {
-        Ranks = new Dictionary<string, List<int>>()
+        RanksDict = new ConcurrentDictionary<string, List<int>>()
         {
-            { path, new List<int>() { index } }
+            [path] = index //object initializer. see: 1
         };
+
     }
 }
 
+//1: https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/object-and-collection-initializers
 
 
 /*
 
 {
-    "dogs": StemDict {
+    "dogs":  {
         "/some/path/dog1.txt": [1, 2, 5, 77, 345],
         "/some/path/dog2.txt": [6, 7, 22, 217],
     },
-    "cats": {
+    "cats":  {
         "/some/path/cat1.txt": [8, 9, 10],
         "/some/path/cat2.txt": [13, 14, 16],
         "/some/path/cat5.txt": [31, 39, 42, 48, 52],

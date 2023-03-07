@@ -21,13 +21,14 @@ class FileProducer : IEnumerable<FileModel>
     {
         foreach (string directory in includedDirectories)
         {
-            foreach (string fileMatch in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
+            foreach (string filePath in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
             {
-                if (fileExtensions.Any(fileMatch.EndsWith))
+                if (fileExtensions.Any(filePath.EndsWith))
                 {
-                    if (!excludedDirectories.Any(fileMatch.Contains))
+                    
+                    if (!excludedDirectories.Any(filePath.Contains))
                     {
-                        yield return new FileModel(fileMatch);
+                        yield return new FileModel(filePath);
                     }
                 }
             }

@@ -18,3 +18,5 @@
     ]
 }
 
+
+IEnumerable<string> Searcher(ConcurrentDictionary<string, InverseIndexEntry> inverseIndex)

@@ -4,7 +4,8 @@ using System.IO;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Enumerables;
 
-
+//! Consider renaming to FileIndexer
+//!TODO: FileIndex and InverseIndex are now just "Index". Update.
 
 /// <summary>
 /// Concurrently consumes file paths, and adds distributes their contents in the FileIndex and InverseIndex in memory

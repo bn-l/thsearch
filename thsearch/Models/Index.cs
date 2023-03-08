@@ -16,11 +16,13 @@ class Index
     private string fileIndexPath;
     private string inverseIndexPath;
 
+
     /// <summary>
     ///  Looks worse than it is: In this contructor if fileIndex.json and inverseIndex.json do not exist it will create them, otherwise it deserializes each
     /// </summary>
     /// <param name="fileIndexPath">a path to a json file</param>
     /// <param name="inverseIndexPath">a path to a json file<</param>
+
     public Index (string fileIndexPath, string inverseIndexPath) 
     {
 
@@ -113,12 +115,17 @@ class Index
         }
     }
 
-
     public void Save() 
     {
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.fileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.inverseIndex));
     }
 
-    
+    /// <summary>
+    /// A search method delegate that ideally will rank the results it provides.
+    /// </summary>
+    public string[] Search(Func<ConcurrentDictionary<string, FileIndexEntry>, ConcurrentDictionary<string, InverseIndexEntry>, string[]> searcher, string query)
+    {
+        return searcher(this.fileIndex, this.inverseIndex);
+    }
 }

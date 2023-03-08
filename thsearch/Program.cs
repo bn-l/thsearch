@@ -92,7 +92,7 @@ class Program
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
     }
 
-    // To be moved all deleted
+    // To be moved to Index.Search
 
     internal static bool CustomContains(string source, string toCheck)
     {
@@ -116,24 +116,6 @@ class Program
             }
         }
         return false;
-    }
-
-    internal static List<string> GetMatchingFiles(string directory, List<string> fileExtensions, List<string> excludedDirs)
-    {
-        var matchingFiles = new List<string>();
-        foreach (string file in Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories))
-        {
-            var fileDirectory = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
-
-            bool correctExtension = fileExtensions.Contains(Path.GetExtension(file));
-            bool pathNotExcluded = !excludedDirs.Any(excludedDir => fileDirectory.Contains(excludedDir + Path.DirectorySeparatorChar));
-
-            if (correctExtension && pathNotExcluded)
-            {
-                matchingFiles.Add(file);
-            }
-        }
-        return matchingFiles;
     }
 
 }

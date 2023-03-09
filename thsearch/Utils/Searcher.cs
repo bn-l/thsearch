@@ -12,7 +12,9 @@ class Searcher {
     private TokenizerAndStemmer tokenizerAndStemmer;
 
     public Searcher(TokenizerAndStemmer tokenizerAndStemmer) {
+
         this.tokenizerAndStemmer = tokenizerAndStemmer;
+        
     }
 
     // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of string paths
@@ -29,7 +31,6 @@ class Searcher {
         
         foreach (var queryToken in queryTokens)
         {
-            // TODO: Searcher should have a way of taking any utf-8 string of any case, and checking for a match in the inverse index's key's. E.g. übEr matches uber.
 
             // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
 

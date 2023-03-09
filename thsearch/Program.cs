@@ -99,8 +99,24 @@ class Program
         // Wait for the producer task to complete
         // producerTask.Wait();
 
-        // Wait for the consumer tasks to complete
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
+
+        // Index has been updated. Let's save it to disk.
+        index.Save();
+
+        Searcher searcher = new Searcher(tokenizerAndStemmer);
+
+        string test = "test";
+
+        index.Search(searcher.TfIdf, test);
+
+        // foreach (string result in index.Search(searcher.TfIdf(index, searchString)))
+        // {
+        //     Console.WriteLine(result);
+        // }
+
+
+
     }
 
 

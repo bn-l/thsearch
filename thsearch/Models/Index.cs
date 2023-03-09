@@ -12,7 +12,8 @@ class Index
     // string path : FileIndexEntry entry
     public ConcurrentDictionary<string, FileIndexEntry> FileIndex {get;}
     // string stem : InverseIndexEntry entry
-    private ConcurrentDictionary<string, InverseIndexEntry> inverseIndex;
+    public ConcurrentDictionary<string, InverseIndexEntry> InverseIndex {get;}
+
     private string fileIndexPath;
     private string inverseIndexPath;
 
@@ -42,11 +43,11 @@ class Index
         if (!File.Exists(this.inverseIndexPath)) 
         {
             File.Create(this.inverseIndexPath);
-            this.inverseIndex = new ConcurrentDictionary<string, InverseIndexEntry>();
+            this.InverseIndex = new ConcurrentDictionary<string, InverseIndexEntry>();
         } 
         else 
         {
-            this.inverseIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, InverseIndexEntry>>(File.ReadAllText(this.inverseIndexPath));
+            this.InverseIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, InverseIndexEntry>>(File.ReadAllText(this.inverseIndexPath));
         }
     }
 
@@ -63,7 +64,7 @@ class Index
         // Update the InverseIndex
         foreach (string stem in entry.Stems) 
         {
-            this.inverseIndex.AddOrUpdate(
+            this.InverseIndex.AddOrUpdate(
                 // If stem doesn't exist in the InverseIndex, create it by k,v:
                 stem, 
                 new InverseIndexEntry
@@ -106,7 +107,7 @@ class Index
        
         // Remove from the InverseIndex
         // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
-        foreach (var stem in this.inverseIndex) 
+        foreach (var stem in this.InverseIndex) 
         {
             if (stem.Value.RanksDict.ContainsKey(pathToRemove)) 
             {
@@ -118,7 +119,7 @@ class Index
     public void Save() 
     {
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
-        File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.inverseIndex));
+        File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));
     }
 
     /// <summary>
@@ -126,6 +127,6 @@ class Index
     /// </summary>
     public string[] Search(Func<ConcurrentDictionary<string, FileIndexEntry>, ConcurrentDictionary<string, InverseIndexEntry>, string[]> searcher, string query)
     {
-        return searcher(this.FileIndex, this.inverseIndex);
+        return searcher(this.FileIndex, this.InverseIndex);
     }
 }

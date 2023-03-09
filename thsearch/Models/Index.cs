@@ -7,47 +7,55 @@ using System.IO;
 
 // Represents and operates on the FileIndex and the InverseIndex. The InverseIndex is always downstream from the FileIndex. 
 
-class Index 
+class Index
 {
     // string path : FileIndexEntry entry
-    public ConcurrentDictionary<string, FileIndexEntry> FileIndex {get;}
+    public ConcurrentDictionary<string, FileIndexEntry> FileIndex { get; }
     // string stem : InverseIndexEntry entry
-    public ConcurrentDictionary<string, InverseIndexEntry> InverseIndex {get;}
+    public ConcurrentDictionary<string, InverseIndexEntry> InverseIndex { get; }
 
     private string fileIndexPath;
     private string inverseIndexPath;
 
 
     /// <summary>
-    ///  Looks worse than it is: In this contructor if fileIndex.json and inverseIndex.json do not exist it will create them, otherwise it deserializes each
+    ///  If fileIndex.json and inverseIndex.json exist and are not empty, deserialize them, otherwise make new ones
     /// </summary>
     /// <param name="fileIndexPath">a path to a json file</param>
     /// <param name="inverseIndexPath">a path to a json file<</param>
 
-    public Index (string fileIndexPath, string inverseIndexPath) 
+    public Index(string fileIndexPath, string inverseIndexPath)
     {
 
         this.fileIndexPath = fileIndexPath;
         this.inverseIndexPath = inverseIndexPath;
 
-        if (!File.Exists(this.fileIndexPath)) 
+        FileInfo fileIndexInfo = new FileInfo(this.fileIndexPath);
+        FileInfo inverseIndexInfo = new FileInfo(this.inverseIndexPath);
+
+
+        if (File.Exists(this.fileIndexPath) && fileIndexInfo.Length > 0)
         {
-            File.Create(this.fileIndexPath);
+            this.FileIndex = JsonSerializer.
+                Deserialize
+                    <ConcurrentDictionary<string, FileIndexEntry>>
+                    (File.ReadAllText(this.fileIndexPath));
+        }
+        else
+        {
             this.FileIndex = new ConcurrentDictionary<string, FileIndexEntry>();
         }
-        else 
-        {
-            this.FileIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, FileIndexEntry>>(File.ReadAllText(this.fileIndexPath));
-        }
 
-        if (!File.Exists(this.inverseIndexPath)) 
+        if (File.Exists(this.inverseIndexPath) && inverseIndexInfo.Length > 0)
         {
-            File.Create(this.inverseIndexPath);
+            this.InverseIndex = JsonSerializer.
+                Deserialize
+                    <ConcurrentDictionary<string, InverseIndexEntry>>
+                    (File.ReadAllText(this.inverseIndexPath));
+        }
+        else
+        {
             this.InverseIndex = new ConcurrentDictionary<string, InverseIndexEntry>();
-        } 
-        else 
-        {
-            this.InverseIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, InverseIndexEntry>>(File.ReadAllText(this.inverseIndexPath));
         }
     }
 
@@ -55,24 +63,24 @@ class Index
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry
     /// </summary>
-    public void Add(string path, FileIndexEntry entry) 
+    public void Add(string path, FileIndexEntry entry)
     {
-        
+
         // key, value, update func
         this.FileIndex.AddOrUpdate(path, entry, (key, value) => entry);
 
         // Update the InverseIndex
-        foreach (string stem in entry.Stems) 
+        foreach (string stem in entry.Stems)
         {
             this.InverseIndex.AddOrUpdate(
                 // If stem doesn't exist in the InverseIndex, create it by k,v:
-                stem, 
+                stem,
                 new InverseIndexEntry
                 (
                     path, new List<int>() { entry.Stems.IndexOf(stem) }
                 ),
                 // If it does this function updates it:
-                (key, value) => 
+                (key, value) =>
                 {
                     // update the ranks here
                     //             RanksDict:
@@ -93,30 +101,30 @@ class Index
     public void Prune(List<string> foundFiles)
     {
 
-        foreach (string path in this.FileIndex.Keys.Except(foundFiles)) 
+        foreach (string path in this.FileIndex.Keys.Except(foundFiles))
         {
             this.Remove(path);
         }
-    
+
     }
 
-    public void Remove(string pathToRemove) 
+    public void Remove(string pathToRemove)
     {
         // Remove from the FileIndex
         this.FileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
-       
+
         // Remove from the InverseIndex
         // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
-        foreach (var stem in this.InverseIndex) 
+        foreach (var stem in this.InverseIndex)
         {
-            if (stem.Value.RanksDict.ContainsKey(pathToRemove)) 
+            if (stem.Value.RanksDict.ContainsKey(pathToRemove))
             {
                 stem.Value.RanksDict.TryRemove(pathToRemove, out List<int> ranks);
             }
         }
     }
 
-    public void Save() 
+    public void Save()
     {
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));

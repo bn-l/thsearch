@@ -106,16 +106,13 @@ class Program
 
         Searcher searcher = new Searcher(tokenizerAndStemmer);
 
-        string test = "test";
 
-        index.Search(searcher.TfIdf, test);
+        foreach (string result in searcher.TfIdf(index, searchString))
+        {
+            Console.WriteLine(result);
+        }
 
-        // foreach (string result in index.Search(searcher.TfIdf(index, searchString)))
-        // {
-        //     Console.WriteLine(result);
-        // }
-
-
+        
 
     }
 

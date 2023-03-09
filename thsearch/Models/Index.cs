@@ -122,11 +122,4 @@ class Index
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));
     }
 
-    /// <summary>
-    /// A search method delegate that ideally will rank the results it provides.
-    /// </summary>
-    public string[] Search(Func<ConcurrentDictionary<string, FileIndexEntry>, ConcurrentDictionary<string, InverseIndexEntry>, string[]> searcher, string query)
-    {
-        return searcher(this.FileIndex, this.InverseIndex);
-    }
 }

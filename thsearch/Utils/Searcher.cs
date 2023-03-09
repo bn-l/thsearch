@@ -18,7 +18,7 @@ class Searcher {
     }
 
     // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of string paths
-    public string[] TfIdf(ConcurrentDictionary<string, FileIndexEntry> fileIndex, ConcurrentDictionary<string, InverseIndexEntry> inverseIndex, string query)
+    public string[] TfIdf(Index index, string query)
     {
 
 
@@ -34,13 +34,13 @@ class Searcher {
 
             // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
 
-            string key = inverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
+            string key = index.InverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
             
 
-            if (!inverseIndex.TryGetValue(key, out InverseIndexEntry inverseIndexEntry))
+            if (!index.InverseIndex.TryGetValue(key, out InverseIndexEntry inverseIndexEntry))
                 continue;
 
-            int totalDocs = fileIndex.Count;
+            int totalDocs = index.FileIndex.Count;
             int matchingDocs = inverseIndexEntry.RanksDict.Count;
             // idf will be bigger, and give more weight to, terms that are relatively rare in the corpus
             double idf = Math.Log10((double) totalDocs / matchingDocs);

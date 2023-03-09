@@ -5,6 +5,13 @@ class FileIndexEntry
 {
     public DateTime LastModified { get; set; }
     public List<string> Stems { get; set; }
+
+    public FileIndexEntry(DateTime lastModified, List<string> stems)
+    {
+        this.LastModified = lastModified;
+        this.Stems = stems;
+    }
+
 }
 
 

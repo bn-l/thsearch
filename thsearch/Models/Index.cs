@@ -10,7 +10,7 @@ using System.IO;
 class Index 
 {
     // string path : FileIndexEntry entry
-    private ConcurrentDictionary<string, FileIndexEntry> fileIndex;
+    public ConcurrentDictionary<string, FileIndexEntry> FileIndex {get;}
     // string stem : InverseIndexEntry entry
     private ConcurrentDictionary<string, InverseIndexEntry> inverseIndex;
     private string fileIndexPath;
@@ -32,11 +32,11 @@ class Index
         if (!File.Exists(this.fileIndexPath)) 
         {
             File.Create(this.fileIndexPath);
-            this.fileIndex = new ConcurrentDictionary<string, FileIndexEntry>();
+            this.FileIndex = new ConcurrentDictionary<string, FileIndexEntry>();
         }
         else 
         {
-            this.fileIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, FileIndexEntry>>(File.ReadAllText(this.fileIndexPath));
+            this.FileIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, FileIndexEntry>>(File.ReadAllText(this.fileIndexPath));
         }
 
         if (!File.Exists(this.inverseIndexPath)) 
@@ -58,7 +58,7 @@ class Index
     {
         
         // key, value, update func
-        this.fileIndex.AddOrUpdate(path, entry, (key, value) => entry);
+        this.FileIndex.AddOrUpdate(path, entry, (key, value) => entry);
 
         // Update the InverseIndex
         foreach (string stem in entry.Stems) 
@@ -92,7 +92,7 @@ class Index
     public void Prune(List<string> foundFiles)
     {
 
-        foreach (string path in this.fileIndex.Keys.Except(foundFiles)) 
+        foreach (string path in this.FileIndex.Keys.Except(foundFiles)) 
         {
             this.Remove(path);
         }
@@ -102,7 +102,7 @@ class Index
     public void Remove(string pathToRemove) 
     {
         // Remove from the FileIndex
-        this.fileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
+        this.FileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
        
         // Remove from the InverseIndex
         // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
@@ -117,7 +117,7 @@ class Index
 
     public void Save() 
     {
-        File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.fileIndex));
+        File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.inverseIndex));
     }
 
@@ -126,6 +126,6 @@ class Index
     /// </summary>
     public string[] Search(Func<ConcurrentDictionary<string, FileIndexEntry>, ConcurrentDictionary<string, InverseIndexEntry>, string[]> searcher, string query)
     {
-        return searcher(this.fileIndex, this.inverseIndex);
+        return searcher(this.FileIndex, this.inverseIndex);
     }
 }

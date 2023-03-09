@@ -1,54 +1,37 @@
 namespace thsearch;
 
 using System.IO;
-using CommunityToolkit.HighPerformance;
-using CommunityToolkit.HighPerformance.Enumerables;
 
-//! Consider renaming to FileIndexer
-//!TODO: FileIndex and InverseIndex are now just "Index". Update.
+
 
 /// <summary>
-/// Concurrently consumes file paths, and adds distributes their contents in the FileIndex and InverseIndex in memory
+/// Concurrently consumes file paths, and adds distributes their contents into an index
 /// </summary>
 class FileConsumer {
-    private FileIndex fileIndex;
-    private InverseIndex inverseIndex;
+    private Index index;
     private StringExtractor stringExtractor;
-    private Tokenizer tokenizer;
-    private Stemmer stemmer;
+    private TokenizerAndStemmer tokenizerAndStemmer;
 
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    /// <param name="fileIndex">the file index, a concurrent dictionary, of path and tokens</param>
-    /// <param name="inverseIndex">the opposite of the file index, a concurrent dictionary, of tokens and paths</param>
-    /// <param name="stringExtractor">A type that extracts the string from a file path and file type argument</param>
-    /// <param name="tokenizer">Splits the string into tokens, FileConsumer expects this to return a ReadOnlySpanTokenizer<char> return value"</param>
-    /// <param name="stemmer">Stems words, FileConsumer expects it to return a ReadOnlySpan<string></param>
-
-    public FileConsumer(FileIndex fileIndex, InverseIndex inverseIndex, StringExtractor stringExtractor, Tokenizer tokenizer, Stemmer stemmer) {
-        this.fileIndex = fileIndex;
-        this.inverseIndex = inverseIndex;
+    public FileConsumer(Index index, StringExtractor stringExtractor, TokenizerAndStemmer tokenizerAndStemmer) {
+        this.index = index;
         this.stringExtractor = stringExtractor;
-        this.tokenizer = tokenizer;
-        this.stemmer = stemmer;
+        this.tokenizerAndStemmer = tokenizerAndStemmer;
     }
 
-    public void Process(FileModel file) {
+    public void Consume(FileModel file) {
     
-        if (fileIndex.Contains(file.Path) && file.LastModified <= fileIndex[file.Path].LastModified) { return; }
+        // Do we have it? And if yes, is ours out of date?
+        if (index.FileIndex.ContainsKey(file.Path) && file.LastModified <= index.FileIndex[file.Path].LastModified) { return; }
 
 
-        string text = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
- 
-        ReadOnlySpanTokenizer<Char> tokens = tokenizer.Tokenize(text);
-      
-        ReadOnlySpan<string> stems = stemmer.Stem(tokens);
+        string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
+        
+        
+        List<string> stems = tokenizerAndStemmer.Process(rawString);
 
-        FileIndexEntry entry = new 
-  
-        fileIndex.Add(file.Path, file.LastModified, stems);
-  
-        inverseIndex.Add(file.Path, stems);    
+        FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
+
+        this.index.Add(file.Path, entry);
+    
     }
 }

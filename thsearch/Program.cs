@@ -40,15 +40,26 @@ class Program
         }
 
         configPath = Path.Combine(currentDirectory, configName + ".txt");
-
         ConfigFileParser config = new ConfigFileParser(configPath);
 
-        // in the future could be refactored to be just a Producer type (which FileProducer would inherit) and use polymorphism. Giving more flexibility on grep candidate creation. 
+        Index index = new Index(Path.Combine(currentDirectory, "fileIndex.json"), Path.Combine(currentDirectory, "inverseIndex.json"));
+
+
+        TxtExtractor txtExtractor = new TxtExtractor();
+        PdfExtractor pdfExtractor = new PdfExtractor();
+        HtmlExtractor htmlExtractor = new HtmlExtractor();
+        EpubExtractor epubExtractor = new EpubExtractor();
+        StringExtractor stringExtractor = new StringExtractor(new IExtractor[] { txtExtractor, pdfExtractor, htmlExtractor, epubExtractor }, txtExtractor);
+
+        TokenizerAndStemmer tokenizerAndStemmer = new TokenizerAndStemmer();
 
         FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions);
 
-        // Create a shared BlockingCollection for the files
-        var filesQueue = new BlockingCollection<FileModel>();
+        FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizerAndStemmer);
+
+
+        BlockingCollection<FileModel> filesQueue = new BlockingCollection<FileModel>();
+        // used for pruning later
         List<string> foundFiles = new List<string>();
 
 
@@ -80,7 +91,7 @@ class Program
                 foreach (FileModel file in filesQueue.GetConsumingEnumerable())
                 {
                     // Search for the search string in the file
-                    fileConsumer.Process(file);
+                    fileConsumer.Consume(file);
                 }
             });
         }
@@ -92,30 +103,5 @@ class Program
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
     }
 
-    // To be moved to Index.Search
-
-    internal static bool CustomContains(string source, string toCheck)
-    {
-        CompareInfo ci = new CultureInfo("en-US").CompareInfo;
-        CompareOptions co = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
-        return ci.IndexOf(source, toCheck, co) != -1;
-    }
-
-    internal static bool FileContainsString(string file, string searchString)
-
-    {
-        using (var stream = new StreamReader(file))
-        {
-            string line;
-            while ((line = stream.ReadLine()) != null)
-            {
-                if (line.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
 }

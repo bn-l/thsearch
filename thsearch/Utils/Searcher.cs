@@ -1,34 +1,42 @@
 namespace thsearch;
     
 using System.Collections.Concurrent;
+using System.Globalization;
 
-// Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer
+// Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer.
+
+
 
 class Searcher {
 
-    private Tokenizer tokenizer;
-    private Stemmer stemmer;
+    private TokenizerAndStemmer tokenizerAndStemmer;
 
-    public Searcher(Tokenizer tokenizer, Stemmer stemmer) {
-        this.tokenizer = tokenizer;
-        this.stemmer = stemmer;
+    public Searcher(TokenizerAndStemmer tokenizerAndStemmer) {
+        this.tokenizerAndStemmer = tokenizerAndStemmer;
     }
 
     // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of string paths
     public string[] TfIdf(ConcurrentDictionary<string, FileIndexEntry> fileIndex, ConcurrentDictionary<string, InverseIndexEntry> inverseIndex, string query)
     {
 
-        // !! Rewrite to work
 
-        var queryTokens = tokenizer.Tokenize(query).Select(stemmer.Stem).Distinct();
+        IEnumerable<string> queryTokens = tokenizerAndStemmer.Process(query).Distinct();
+        
 
         Dictionary<string, double> rankScores = new Dictionary<string, double>();
         
-        // Update the score for each document in scores dict by iterating over each token
+        // Update the score for each document path in scores dict by iterating over each token
+        
         foreach (var queryToken in queryTokens)
         {
+            // TODO: Searcher should have a way of taking any utf-8 string of any case, and checking for a match in the inverse index's key's. E.g. übEr matches uber.
+
+            // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
+
+            string key = inverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
             
-            if (!inverseIndex.TryGetValue(queryToken, out InverseIndexEntry inverseIndexEntry))
+
+            if (!inverseIndex.TryGetValue(key, out InverseIndexEntry inverseIndexEntry))
                 continue;
 
             int totalDocs = fileIndex.Count;
@@ -54,6 +62,14 @@ class Searcher {
             .Select(pair => pair.Key)
             .ToArray();
 
+    }
+
+    // E.g. Matches: übEr and uber
+    internal static bool CustomContains(string source, string toCheck)
+    {
+        CompareInfo ci = new CultureInfo("en-US").CompareInfo;
+        CompareOptions co = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
+        return ci.IndexOf(source, toCheck, co) != -1;
     }
 }
 

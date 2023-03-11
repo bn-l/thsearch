@@ -14,7 +14,7 @@ class Index
     public ConcurrentDictionary<string, FileIndexEntry> FileIndex { get; }
 
     public ConcurrentDictionary<
-        string, Dictionary<
+        string, ConcurrentDictionary<
             string, List<int>
             >
         > 
@@ -61,7 +61,7 @@ class Index
         {
             this.InverseIndex = JsonSerializer.Deserialize<
                 ConcurrentDictionary<
-                    string, Dictionary<
+                    string, ConcurrentDictionary<
                         string, List<int>
                     >
                 >
@@ -75,7 +75,7 @@ class Index
         {
             Debug.WriteLine($"Error deserializing file {this.inverseIndexPath}: {ex}");
             this.InverseIndex = new ConcurrentDictionary<
-                string, Dictionary<
+                string, ConcurrentDictionary<
                     string, List<int>
                 >
             >();
@@ -95,16 +95,33 @@ class Index
         foreach (string stem in entry.Stems)
         {
             this.InverseIndex.AddOrUpdate(
-                // If stem doesn't exist in the InverseIndex, create it and its Ranks Dictionary: 
+                // If stem doesn't exist in the InverseIndex, create it and its Ranks Dictionary.
+                // key to update
                 stem,
-                new Dictionary<string, List<int>>()
+                // If it's not in dictionary add it using this function:
+                (kStem) =>
                 {
-                    {path, new List<int>() { entry.Stems.IndexOf(stem) } }
+                    var ranksDict = new ConcurrentDictionary<string, List<int>>();
+                    ranksDict.TryAdd(path, new List<int>() { entry.Stems.IndexOf(stem) });
+                    return ranksDict;
                 },
-                (kStem, vRanks) =>
+                // If it is in dictionary update it using this function:
+                (kStem, vRanksDictionary) =>
                 {
-                    vRanks[path].Add(entry.Stems.IndexOf(stem));
-                    return vRanks;
+                    // For it's nested ConcurrentDictionary (ranks dictionary), also AddOrUpdate
+                    vRanksDictionary.AddOrUpdate(
+                        path,
+                        (key) =>
+                        {
+                            return new List<int>() { entry.Stems.IndexOf(stem) };
+                        },
+                        (kPath, vRanks) =>
+                        {
+                            vRanks.Add(entry.Stems.IndexOf(stem));
+                            return vRanks;
+                        }
+                    );
+                    return vRanksDictionary;
                 }
             );
         }

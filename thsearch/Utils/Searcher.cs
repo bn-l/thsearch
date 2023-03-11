@@ -35,7 +35,9 @@ class Searcher {
             // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
 
             string key = index.InverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
-            
+
+            if (key == null) continue;
+
 
             if (!index.InverseIndex.TryGetValue(key, out InverseIndexEntry inverseIndexEntry))
                 continue;

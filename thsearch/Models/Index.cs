@@ -3,6 +3,7 @@ namespace thsearch;
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.IO;
+using System.Diagnostics;
 
 
 // Represents and operates on the FileIndex and the InverseIndex. The InverseIndex is always downstream from the FileIndex. 
@@ -11,8 +12,13 @@ class Index
 {
     // string path : FileIndexEntry entry
     public ConcurrentDictionary<string, FileIndexEntry> FileIndex { get; }
-    // string stem : InverseIndexEntry entry
-    public ConcurrentDictionary<string, InverseIndexEntry> InverseIndex { get; }
+
+    public ConcurrentDictionary<
+        string, ConcurrentDictionary<
+            string, List<int>
+            >
+        > 
+        InverseIndex { get; }
 
     private string fileIndexPath;
     private string inverseIndexPath;
@@ -33,39 +39,35 @@ class Index
         FileInfo fileIndexInfo = new FileInfo(this.fileIndexPath);
         FileInfo inverseIndexInfo = new FileInfo(this.inverseIndexPath);
 
+        // Try to deserialize the fileIndex and inverseIndex, if they exist and are not empty. Otherwise create new ones
 
-        if (File.Exists(this.fileIndexPath) && fileIndexInfo.Length > 0)
+        try 
         {
-            this.FileIndex = JsonSerializer.
-                Deserialize
-                    <ConcurrentDictionary<string, FileIndexEntry>>
-                    (File.ReadAllText(this.fileIndexPath));
+            this.FileIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, FileIndexEntry>>(File.ReadAllText(this.fileIndexPath));
         }
-        else
+        catch (Exception ex) 
         {
+            Debug.WriteLine($"Error deserializing file {this.fileIndexPath}: {ex}");
             this.FileIndex = new ConcurrentDictionary<string, FileIndexEntry>();
         }
-
-        if (File.Exists(this.inverseIndexPath) && inverseIndexInfo.Length > 0)
+        try 
         {
-            this.InverseIndex = JsonSerializer.
-                Deserialize
-                    <ConcurrentDictionary<string, InverseIndexEntry>>
-                    (File.ReadAllText(this.inverseIndexPath));
+            this.InverseIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, InverseIndexEntry>>(File.ReadAllText(this.inverseIndexPath));
+        
         }
-        else
+        catch (Exception ex) 
         {
+            Debug.WriteLine($"Error deserializing file {this.inverseIndexPath}: {ex}");
             this.InverseIndex = new ConcurrentDictionary<string, InverseIndexEntry>();
         }
-    }
 
+    }
 
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry
     /// </summary>
     public void Add(string path, FileIndexEntry entry)
     {
-
         // key, value, update func
         this.FileIndex.AddOrUpdate(path, entry, (key, value) => entry);
 
@@ -73,21 +75,23 @@ class Index
         foreach (string stem in entry.Stems)
         {
             this.InverseIndex.AddOrUpdate(
-                // If stem doesn't exist in the InverseIndex, create it by k,v:
+                // If stem doesn't exist in the InverseIndex, create it and its Ranks Dictionary: 
                 stem,
-                new InverseIndexEntry
-                (
-                    path, new List<int>() { entry.Stems.IndexOf(stem) }
-                ),
-                // If it does this function updates it:
-                (key, value) =>
+                new ConcurrentDictionary<string, List<int>> { { path, new List<int>() { entry.Stems.IndexOf(stem) } } },
+                
+                // If it does, update it (using a nested AddOrUpdate for the nested RanksDict)
+                (keyStem, valueInverseIndexEntry) =>
                 {
-                    // update the ranks here
-                    //             RanksDict:
-                    //    path:                 ranks:
-                    // "/some/path/dog1.txt": [1, 2, 5, 77, 345],
-                    value.RanksDict[path].Add(entry.Stems.IndexOf(stem));
-                    return value;
+                    valueInverseIndexEntry.RanksDict.AddOrUpdate(
+                        path,
+                        new List<int>() { entry.Stems.IndexOf(stem) },
+                        (keyPath, valueRanks) =>
+                        {
+                            valueRanks.Add(entry.Stems.IndexOf(stem));
+                            return valueRanks;
+                        }
+                    );
+                    return valueInverseIndexEntry;
                 }
             );
         }

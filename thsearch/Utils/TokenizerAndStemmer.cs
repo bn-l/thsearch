@@ -37,6 +37,9 @@ class TokenizerAndStemmer
         // Each ReadOnlySpan<char> token in this loop is trimmed of ',' and added to the return value
         foreach (ReadOnlySpan<char> token in text.Tokenize(' '))
         {
+            // !! TODO: Special characters are converted to escape sequences. E.g. ë becomes \u00EB
+
+            // !! TODO: Stop word removal
 
             ReadOnlySpan<char> tokenPunctuationTrimmed = token.Trim(this.punctuationChars.AsSpan());
 

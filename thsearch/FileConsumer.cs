@@ -31,6 +31,7 @@ class FileConsumer {
 
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
 
+        // Can multiple threads access this at once?
         this.index.Add(file.Path, entry);
     
     }

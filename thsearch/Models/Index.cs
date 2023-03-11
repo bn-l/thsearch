@@ -18,7 +18,7 @@ class Index
             string, List<int>
             >
         > 
-        InverseIndex { get; }
+    InverseIndex { get; }
 
     private string fileIndexPath;
     private string inverseIndexPath;
@@ -146,5 +146,8 @@ class Index
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));
     }
+
+
+    
 
 }

@@ -24,8 +24,8 @@ class Searcher {
 
         IEnumerable<string> queryTokens = tokenizerAndStemmer.Process(query).Distinct();
         
-
-        Dictionary<string, double> rankScores = new Dictionary<string, double>();
+        // path, score (determines result ranks)  
+        Dictionary<string, double> resultScores = new Dictionary<string, double>();
         
         // Update the score for each document path in scores dict by iterating over each token
         
@@ -37,30 +37,29 @@ class Searcher {
             string key = index.InverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
 
             if (key == null) continue;
-
-
-            if (!index.InverseIndex.TryGetValue(key, out InverseIndexEntry inverseIndexEntry))
-                continue;
+            //  stem: ranksDictionary { path: List<int> ranks }
+            if (!index.InverseIndex.TryGetValue(key, out var ranksDictionary)) continue;
 
             int totalDocs = index.FileIndex.Count;
-            int matchingDocs = inverseIndexEntry.RanksDict.Count;
+            int matchingDocs = ranksDictionary.Count;
             // idf will be bigger, and give more weight to, terms that are relatively rare in the corpus
             double idf = Math.Log10((double) totalDocs / matchingDocs);
 
             // Go over each document in the ranksDict and get frequency of the term in the documents
-            foreach (var (document, termFreqs) in inverseIndexEntry.RanksDict)
+            foreach (var (document, termFreqs) in ranksDictionary)
             {
                 double tf = (double) termFreqs.Count;
                 double tfIdf = tf * idf;
 
-                rankScores.TryGetValue(document, out double currentScore);
-                rankScores[document] = currentScore + tfIdf;
-
+                if (resultScores.TryGetValue(document, out double currentScore))
+                {
+                    resultScores[document] = currentScore + tfIdf;
+                }
             }
 
         }
 
-       return rankScores
+       return resultScores
             .OrderByDescending(pair => pair.Value)
             .Select(pair => pair.Key)
             .ToArray();

@@ -14,7 +14,7 @@ class Index
     public ConcurrentDictionary<string, FileIndexEntry> FileIndex { get; }
 
     public ConcurrentDictionary<
-        string, ConcurrentDictionary<
+        string, Dictionary<
             string, List<int>
             >
         > 
@@ -43,7 +43,14 @@ class Index
 
         try 
         {
-            this.FileIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, FileIndexEntry>>(File.ReadAllText(this.fileIndexPath));
+            this.FileIndex = JsonSerializer.Deserialize<
+                ConcurrentDictionary<
+                    string, FileIndexEntry
+                >
+            >
+            (
+                File.ReadAllText(this.fileIndexPath)
+            );
         }
         catch (Exception ex) 
         {
@@ -52,13 +59,26 @@ class Index
         }
         try 
         {
-            this.InverseIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, InverseIndexEntry>>(File.ReadAllText(this.inverseIndexPath));
+            this.InverseIndex = JsonSerializer.Deserialize<
+                ConcurrentDictionary<
+                    string, Dictionary<
+                        string, List<int>
+                    >
+                >
+            > 
+            (
+                File.ReadAllText(this.inverseIndexPath)
+            );
         
         }
         catch (Exception ex) 
         {
             Debug.WriteLine($"Error deserializing file {this.inverseIndexPath}: {ex}");
-            this.InverseIndex = new ConcurrentDictionary<string, InverseIndexEntry>();
+            this.InverseIndex = new ConcurrentDictionary<
+                string, Dictionary<
+                    string, List<int>
+                >
+            >();
         }
 
     }
@@ -69,7 +89,7 @@ class Index
     public void Add(string path, FileIndexEntry entry)
     {
         // key, value, update func
-        this.FileIndex.AddOrUpdate(path, entry, (key, value) => entry);
+        this.FileIndex.AddOrUpdate(path, entry, (k, v) => entry);
 
         // Update the InverseIndex
         foreach (string stem in entry.Stems)
@@ -77,21 +97,14 @@ class Index
             this.InverseIndex.AddOrUpdate(
                 // If stem doesn't exist in the InverseIndex, create it and its Ranks Dictionary: 
                 stem,
-                new ConcurrentDictionary<string, List<int>> { { path, new List<int>() { entry.Stems.IndexOf(stem) } } },
-                
-                // If it does, update it (using a nested AddOrUpdate for the nested RanksDict)
-                (keyStem, valueInverseIndexEntry) =>
+                new Dictionary<string, List<int>>()
                 {
-                    valueInverseIndexEntry.RanksDict.AddOrUpdate(
-                        path,
-                        new List<int>() { entry.Stems.IndexOf(stem) },
-                        (keyPath, valueRanks) =>
-                        {
-                            valueRanks.Add(entry.Stems.IndexOf(stem));
-                            return valueRanks;
-                        }
-                    );
-                    return valueInverseIndexEntry;
+                    {path, new List<int>() { entry.Stems.IndexOf(stem) } }
+                },
+                (kStem, vRanks) =>
+                {
+                    vRanks[path].Add(entry.Stems.IndexOf(stem));
+                    return vRanks;
                 }
             );
         }
@@ -121,9 +134,9 @@ class Index
         // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
         foreach (var stem in this.InverseIndex)
         {
-            if (stem.Value.RanksDict.ContainsKey(pathToRemove))
+            if (stem.Value.ContainsKey(pathToRemove))
             {
-                stem.Value.RanksDict.TryRemove(pathToRemove, out List<int> ranks);
+                stem.Value.Remove(pathToRemove, out List<int> ranks);
             }
         }
     }

@@ -1,6 +1,6 @@
 namespace thsearch;
     
-using System.Collections.Concurrent;
+
 using System.Globalization;
 
 // Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer.

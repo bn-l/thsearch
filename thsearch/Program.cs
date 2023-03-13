@@ -53,11 +53,11 @@ class Program
         EpubExtractor epubExtractor = new EpubExtractor();
         StringExtractor stringExtractor = new StringExtractor(new IExtractor[] { txtExtractor, pdfExtractor, htmlExtractor, epubExtractor }, txtExtractor);
 
-        TokenizerAndStemmer tokenizerAndStemmer = new TokenizerAndStemmer();
+        Tokenizer tokenizer = new Tokenizer();
 
         FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions);
 
-        FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizerAndStemmer);
+        FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizer);
 
 
         BlockingCollection<FileModel> filesQueue = new BlockingCollection<FileModel>();
@@ -109,15 +109,13 @@ class Program
         // Index has been updated. Let's save it to disk.
         index.Save();
 
-        Searcher searcher = new Searcher(tokenizerAndStemmer);
+        Searcher searcher = new Searcher(tokenizer);
 
 
         foreach (string result in searcher.TfIdf(index, searchString))
         {
             Console.WriteLine(result);
         }
-
-
 
     }
 

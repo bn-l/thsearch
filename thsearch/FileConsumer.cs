@@ -10,12 +10,12 @@ using System.IO;
 class FileConsumer {
     private Index index;
     private StringExtractor stringExtractor;
-    private TokenizerAndStemmer tokenizerAndStemmer;
+    private Tokenizer tokenizer;
 
-    public FileConsumer(Index index, StringExtractor stringExtractor, TokenizerAndStemmer tokenizerAndStemmer) {
+    public FileConsumer(Index index, StringExtractor stringExtractor, Tokenizer tokenizer) {
         this.index = index;
         this.stringExtractor = stringExtractor;
-        this.tokenizerAndStemmer = tokenizerAndStemmer;
+        this.tokenizer = tokenizer;
     }
 
     public void Consume(FileModel file) {
@@ -27,7 +27,7 @@ class FileConsumer {
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
         
         
-        List<string> stems = tokenizerAndStemmer.Process(rawString);
+        List<string> stems = tokenizer.Process(rawString);
 
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
 

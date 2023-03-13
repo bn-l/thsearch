@@ -3,6 +3,8 @@ namespace thsearch;
 
 // Gives a list of included directories, excluded directories and file extensions from the thsearch.txt file
 
+// TODO: Tests if directory exists. If no, throw exception and exit.
+
 public class ConfigFileParser
 {
     public List<string> IncludedDirectories { get; private set; }
@@ -52,9 +54,20 @@ public class ConfigFileParser
 
         if (!IncludedDirectories.Any() || !FileExtensions.Any())
         {
-            Console.WriteLine("Need at least one included directory and one extension in your thsearch.txt");
+            Console.WriteLine("Error in config: Need at least one included directory and one extension in your thsearch.txt");
             Environment.Exit(1);
         }
+        
+        // joins and then enumerates IncludedDirectories and ExcludedDirectories, if a directory in either doesn't exist will write a message to the console and exit
+        foreach (string directory in IncludedDirectories.Concat(ExcludedDirectories))
+        {
+            if (!Directory.Exists(directory))
+            {
+                Console.WriteLine("Error in config: Directory {0} does not exist.", directory);
+                Environment.Exit(1);
+            }
+        }
+
     }
 }
 

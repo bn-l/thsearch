@@ -9,11 +9,11 @@ using System.Globalization;
 
 class Searcher {
 
-    private TokenizerAndStemmer tokenizerAndStemmer;
+    private Tokenizer tokenizer;
 
-    public Searcher(TokenizerAndStemmer tokenizerAndStemmer) {
+    public Searcher(Tokenizer tokenizer) {
 
-        this.tokenizerAndStemmer = tokenizerAndStemmer;
+        this.tokenizer = tokenizer;
         
     }
 
@@ -22,7 +22,7 @@ class Searcher {
     {
 
 
-        IEnumerable<string> queryTokens = tokenizerAndStemmer.Process(query).Distinct();
+        IEnumerable<string> queryTokens = tokenizer.Process(query).Distinct();
         
         // path, score (determines result ranks)  
         Dictionary<string, double> resultScores = new Dictionary<string, double>();
@@ -51,10 +51,11 @@ class Searcher {
                 double tf = (double) termFreqs.Count;
                 double tfIdf = tf * idf;
 
-                if (resultScores.TryGetValue(document, out double currentScore))
-                {
-                    resultScores[document] = currentScore + tfIdf;
-                }
+                
+                // Adds tfIdf to current score of document in resultScores
+                resultScores[document] = resultScores.GetValueOrDefault(document, 0) + tfIdf;
+            
+
             }
 
         }

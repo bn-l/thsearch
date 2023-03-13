@@ -1,12 +1,12 @@
 namespace thsearch;
 using CommunityToolkit.HighPerformance.Enumerables;
 using CommunityToolkit.HighPerformance;
-
-// 
+using System.Diagnostics;
 
 
 class TokenizerAndStemmer
 {
+    private int debugCallNumber = 0;
 
     private readonly char[] punctuationChars;
 
@@ -33,6 +33,11 @@ class TokenizerAndStemmer
 
     public List<string> Process(string text)
     {
+
+        int currentThreadId = Thread.CurrentThread.ManagedThreadId;
+
+        debugCallNumber++;
+       
 
         List<string> stems = new List<string>();
 

@@ -82,9 +82,6 @@ class Program
 
         // FileConsumer instance called with the Index and InverseIndex instances as references
 
-        // !!! TODO: Remove stop words as well
-        // !! rename TokenizerAndStemmer to Tokenizer
-
         // Create the consumer tasks
         var consumerTasks = new Task[processorCount];
         for (int i = 0; i < processorCount; i++)

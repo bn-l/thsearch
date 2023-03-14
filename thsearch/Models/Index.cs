@@ -83,7 +83,8 @@ class Index
 
     }
 
-    // TODO: Inverse index isn't being updated, a rank is merely added each time (file index is being updated)
+    // TODO: change paths and words to be number ids to reduce lookup time and index size.
+    // TODO: Use some compression to save read and write time. Read, decompress, deserialize.
 
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry

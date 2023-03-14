@@ -7,10 +7,10 @@ class Tokenizer
 
     private readonly string[] suffixes;
 
-    private readonly string[] stopWords;
+    private readonly HashSet<string> stopWords;
 
 
-    public Tokenizer(char[] trimChars = null, string[] suffixes = null)
+    public Tokenizer(char[] trimChars = null, string[] suffixes = null, HashSet<string> stopWords = null)
     {
 
         this.punctuationChars = trimChars ??
@@ -24,8 +24,9 @@ class Tokenizer
             { 
                 "able", "al", "ed", "en", "er", "ful", "ic", "ing", "ion", "less", "ly", "ment", "ness", "ous", "s", "tion", "ty", "y", "'s"
             };
+        this.suffixes = this.suffixes.OrderByDescending(x => x.Length).ToArray();
 
-        this.stopWords = stopWords ?? new String[]
+        this.stopWords = stopWords ?? new HashSet<string>
             {
                 "a", "an",  "and",  "are",  "as",  "at",  "be",  "but",  "by",  "for",  "if",  "in",  "into",  "is",  "it", "not",  "of",  "on",  "or",  "such",  "that",  "the",  "their",  "then",  "there",  "these",  "they",  "this",  "to",  "was",  "will",  "with"
             };
@@ -39,27 +40,33 @@ class Tokenizer
         // lower case split of words
         string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        // take out stop word
-        tokens = tokens.Except(stopWords).ToArray();
+        List<string> processedTokens = new List<string>();
 
-        for (int i = 0; i < tokens.Length; i++)
+        foreach (string token in tokens)
         {
-            
-            // trim punctuation
-            tokens[i] = tokens[i].Trim(this.punctuationChars);
+            // skip stop words
+            if (stopWords.Contains(token))
+            {
+                continue;
+            }
 
-            // remove suffix
+            // trim punctuation 
+            string processedToken = token.Trim(this.punctuationChars);
+
+            //can also be a contains call with suffixes a hashset
             foreach (string suffix in this.suffixes)
             {
-                if (tokens[i].EndsWith(suffix))
+                if (processedToken.EndsWith(suffix))
                 {
-                    tokens[i] = tokens[i].Substring(0, tokens[i].Length - suffix.Length);
+                    processedToken = processedToken.Substring(0, processedToken.Length - suffix.Length);
                     break;
                 }
             }
+
+            processedTokens.Add(processedToken);
         }
 
-        return tokens;
+        return processedTokens.ToArray();
 
     }
 

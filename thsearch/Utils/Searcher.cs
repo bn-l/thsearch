@@ -5,6 +5,7 @@ using System.Globalization;
 
 // Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer.
 
+// TODO: InverseIndex is a concurrent dictionary, can it be multithreaded searched? (Could have one producer thread that iterates over the keys of the dictionary, adding each to a concurrentqueue)
 
 
 class Searcher {
@@ -21,7 +22,9 @@ class Searcher {
     public string[] TfIdf(Index index, string query)
     {
 
+        if(string.IsNullOrEmpty(query)) throw new ArgumentException("Query cannot be null or empty");
 
+       
         IEnumerable<string> queryTokens = tokenizer.Process(query).Distinct();
         
         // path, score (determines result ranks)  
@@ -32,14 +35,8 @@ class Searcher {
         foreach (var queryToken in queryTokens)
         {
 
-            // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
-
-            // TODO: Slow. Many keys to compare. Lookup is the best. Tokens should be well formatted.
-            string key = index.InverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
-
-            if (key == null) continue;
-            //  stem: ranksDictionary { path: List<int> ranks }
-            if (!index.InverseIndex.TryGetValue(key, out var ranksDictionary)) continue;
+            // try get value and out it. If it's not there, skip this iteration (continue)
+            if (!index.InverseIndex.TryGetValue(queryToken, out var ranksDictionary)) continue;
 
             int totalDocs = index.FileIndex.Count;
             int matchingDocs = ranksDictionary.Count;

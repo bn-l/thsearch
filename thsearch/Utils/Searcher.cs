@@ -34,6 +34,7 @@ class Searcher {
 
             // Get the first key in the inverse dictionary the matches (according to CustomContains) the queryToken
 
+            // TODO: Slow. Many keys to compare. Lookup is the best. Tokens should be well formatted.
             string key = index.InverseIndex.Keys.Where(k => CustomContains(k, queryToken)).FirstOrDefault();
 
             if (key == null) continue;
@@ -43,7 +44,7 @@ class Searcher {
             int totalDocs = index.FileIndex.Count;
             int matchingDocs = ranksDictionary.Count;
             // idf will be bigger, and give more weight to, terms that are relatively rare in the corpus
-            double idf = Math.Log10((double) totalDocs / matchingDocs);
+            double idf = Math.Log10((double) (totalDocs + 1 / matchingDocs));
 
             // Go over each document in the ranksDict and get frequency of the term in the documents
             foreach (var (document, termFreqs) in ranksDictionary)

@@ -106,6 +106,9 @@ class Program
 
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
 
+        // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
+        index.Prune(foundFiles);
+
         // Index has been updated. Let's save it to disk.
         index.Save();
 

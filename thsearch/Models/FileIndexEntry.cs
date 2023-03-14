@@ -4,9 +4,9 @@ namespace thsearch;
 class FileIndexEntry
 {
     public DateTime LastModified { get; set; }
-    public List<string> Stems { get; set; }
+    public string[] Stems { get; set; }
 
-    public FileIndexEntry(DateTime lastModified, List<string> stems)
+    public FileIndexEntry(DateTime lastModified, string[] stems)
     {
         this.LastModified = lastModified;
         this.Stems = stems;

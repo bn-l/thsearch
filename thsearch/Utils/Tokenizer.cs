@@ -32,24 +32,34 @@ class Tokenizer
 
     }
 
-    // !! TODO: remove special characters including white space
+    // TODO: remove special characters, escapes sequences, \n, \t, etc.
 
-    public List<string> Process(string text)
+    public string[] Process(string text)
     {
-        // a new string is being created each time
+        // lower case split of words
+        string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        string[] rawTokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // take out stop word
+        tokens = tokens.Except(stopWords).ToArray();
 
-        //converts all tokens to lowercase
-        string[] lowercased = rawTokens.Select(token => token.ToLower()).ToArray();
+        for (int i = 0; i < tokens.Length; i++)
+        {
+            
+            // trim punctuation
+            tokens[i] = tokens[i].Trim(this.punctuationChars);
 
-        string[] stopWordless = lowercased.Except(stopWords).ToArray();
+            // remove suffix
+            foreach (string suffix in this.suffixes)
+            {
+                if (tokens[i].EndsWith(suffix))
+                {
+                    tokens[i] = tokens[i].Substring(0, tokens[i].Length - suffix.Length);
+                    break;
+                }
+            }
+        }
 
-        string[] punctuationless = stopWordless.Select(token => token.Trim(this.punctuationChars)).ToArray();
-
-        string[] suffixless = punctuationless.Select(token => this.suffixes.Aggregate(token, (current, suffix) => current.EndsWith(suffix) ? current.Substring(0, current.Length - suffix.Length) : current)).ToArray();
-
-        return suffixless.ToList();
+        return tokens;
 
     }
 

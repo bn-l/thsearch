@@ -22,16 +22,16 @@ class FileConsumer {
     
         // Do we have it? And if yes, is ours out of date?
         if (index.FileIndex.ContainsKey(file.Path) && file.LastModified <= index.FileIndex[file.Path].LastModified) { return; }
-
+        
 
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
         
         
-        List<string> stems = tokenizer.Process(rawString);
+        string[] stems = tokenizer.Process(rawString);
 
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
 
-        // Can multiple threads access this at once?
+        
         this.index.Add(file.Path, entry);
     
     }

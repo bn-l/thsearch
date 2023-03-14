@@ -83,6 +83,8 @@ class Index
 
     }
 
+    // TODO: Inverse index isn't being updated, a rank is merely added each time (file index is being updated)
+
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry
     /// </summary>
@@ -91,18 +93,21 @@ class Index
         // key, value, update func
         this.FileIndex.AddOrUpdate(path, entry, (k, v) => entry);
 
+        //Prune the path from the InverseIndex
+        PruneInverseIndex(path);
+
         // Update the InverseIndex
-        foreach (string stem in entry.Stems)
+        for(var i = 0; i < entry.Stems.Length; i++)
         {
             this.InverseIndex.AddOrUpdate(
                 // If stem doesn't exist in the InverseIndex, create it and its Ranks Dictionary.
                 // key to update
-                stem,
+                entry.Stems[i],
                 // If it's not in dictionary add it using this function:
                 (kStem) =>
                 {
                     var ranksDict = new ConcurrentDictionary<string, List<int>>();
-                    ranksDict.TryAdd(path, new List<int>() { entry.Stems.IndexOf(stem) });
+                    ranksDict.TryAdd(path, new List<int>() { i });
                     return ranksDict;
                 },
                 // If it is in dictionary update it using this function:
@@ -113,11 +118,11 @@ class Index
                         path,
                         (key) =>
                         {
-                            return new List<int>() { entry.Stems.IndexOf(stem) };
+                            return new List<int>() { i };
                         },
                         (kPath, vRanks) =>
                         {
-                            vRanks.Add(entry.Stems.IndexOf(stem));
+                            vRanks.Add(i);
                             return vRanks;
                         }
                     );
@@ -134,13 +139,33 @@ class Index
     /// <param name="foundFiles">A list of found paths</param>
     public void Prune(List<string> foundFiles)
     {
-
         foreach (string path in this.FileIndex.Keys.Except(foundFiles))
         {
             this.Remove(path);
+            PruneInverseIndex(path);
+        }
+    }
+
+    private void PruneInverseIndex(string path)
+    {
+        // Remove the rank dictionary entry for path
+        foreach (string word in this.InverseIndex.Keys)
+        {
+            if (this.InverseIndex.TryGetValue(word, out ConcurrentDictionary<string, List<int>> rankDict))
+            {
+                rankDict.Remove(path, out List<int> ranks);
+            }
+
+            // If the word's rank dictionary is now empty, delete the word
+            if (this.InverseIndex.TryGetValue(word, out rankDict) && rankDict.Count == 0)
+            {
+                this.InverseIndex.Remove(word, out ConcurrentDictionary<string, List<int>> _);
+            }
         }
 
+
     }
+
 
     public void Remove(string pathToRemove)
     {

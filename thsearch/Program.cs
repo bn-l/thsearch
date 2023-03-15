@@ -112,9 +112,9 @@ class Program
         Searcher searcher = new Searcher(tokenizer);
 
 
-        foreach (string result in searcher.TfIdf(index, searchString))
+        foreach (int idResult in searcher.TfIdf(index, searchString))
         {
-            Console.WriteLine(result);
+            Console.WriteLine(index.IdIndex.FirstOrDefault(x => x.Value == idResult).Key);
         }
 
     }

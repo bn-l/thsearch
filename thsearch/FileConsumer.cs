@@ -20,17 +20,14 @@ class FileConsumer {
 
     public void Consume(FileModel file) {
     
-        // Do we have it? And if yes, is ours out of date?
-        if (index.FileIndex.ContainsKey(file.Path) && file.LastModified <= index.FileIndex[file.Path].LastModified) { return; }
+        if(this.index.FileUpToDate(file)) return;
         
-
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
         
         
         string[] stems = tokenizer.Process(rawString);
 
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
-
         
         this.index.Add(file.Path, entry);
     

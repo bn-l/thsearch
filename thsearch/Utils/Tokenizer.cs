@@ -34,11 +34,13 @@ class Tokenizer
     }
 
     // TODO: remove special characters, escapes sequences, \n, \t, etc.
+    // - Need to remove these and all special characters before spliting.
 
     public string[] Process(string text)
     {
         // lower case split of words
         string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
 
         List<string> processedTokens = new List<string>();
 

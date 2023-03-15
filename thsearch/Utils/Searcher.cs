@@ -18,8 +18,8 @@ class Searcher {
         
     }
 
-    // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of string paths
-    public string[] TfIdf(Index index, string query)
+    // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of int pathIds
+    public int[] TfIdf(Index index, string query)
     {
 
         if(string.IsNullOrEmpty(query)) throw new ArgumentException("Query cannot be null or empty");
@@ -27,8 +27,8 @@ class Searcher {
        
         IEnumerable<string> queryTokens = tokenizer.Process(query).Distinct();
         
-        // path, score (determines result ranks)  
-        Dictionary<string, double> resultScores = new Dictionary<string, double>();
+        // path, score (determines result ranks)  pathId: resultScore
+        Dictionary<int, double> resultScores = new Dictionary<int, double>();
         
         // Update the score for each document path in scores dict by iterating over each token
         
@@ -53,7 +53,6 @@ class Searcher {
                 // Adds tfIdf to current score of document in resultScores
                 resultScores[document] = resultScores.GetValueOrDefault(document, 0) + tfIdf;
             
-
             }
 
         }

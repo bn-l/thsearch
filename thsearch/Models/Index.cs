@@ -10,17 +10,17 @@ using System.Diagnostics;
 
 class Index
 {
-    // string path : FileIndexEntry entry
-    public ConcurrentDictionary<string, FileIndexEntry> FileIndex { get; }
+    // int pathId : FileIndexEntry entry
+    public ConcurrentDictionary<int, FileIndexEntry> FileIndex { get; }
 
     public ConcurrentDictionary<
         string, ConcurrentDictionary<
-            string, List<int>
+            int, List<int>
             >
         > 
     InverseIndex { get; }
 
-    public ConcurrentDictionary<int, string> IdIndex { get; }
+    public ConcurrentDictionary<string, int> IdIndex { get; }
 
     private string fileIndexPath;
     private string inverseIndexPath;
@@ -38,9 +38,7 @@ class Index
 
         this.fileIndexPath = fileIndexPath;
         this.inverseIndexPath = inverseIndexPath;
-
-        FileInfo fileIndexInfo = new FileInfo(this.fileIndexPath);
-        FileInfo inverseIndexInfo = new FileInfo(this.inverseIndexPath);
+        this.idIndexPath = idIndexPath;
 
         // Try to deserialize the fileIndex and inverseIndex, if they exist and are not empty. Otherwise create new ones
 
@@ -48,7 +46,7 @@ class Index
         {
             this.FileIndex = JsonSerializer.Deserialize<
                 ConcurrentDictionary<
-                    string, FileIndexEntry
+                    int, FileIndexEntry
                 >
             >
             (
@@ -58,14 +56,15 @@ class Index
         catch (Exception ex) 
         {
             Debug.WriteLine($"Error deserializing file {this.fileIndexPath}: {ex}");
-            this.FileIndex = new ConcurrentDictionary<string, FileIndexEntry>();
+            this.FileIndex = new ConcurrentDictionary<int, FileIndexEntry>();
         }
+
         try 
         {
             this.InverseIndex = JsonSerializer.Deserialize<
                 ConcurrentDictionary<
                     string, ConcurrentDictionary<
-                        string, List<int>
+                        int, List<int>
                     >
                 >
             > 
@@ -79,14 +78,14 @@ class Index
             Debug.WriteLine($"Error deserializing file {this.inverseIndexPath}: {ex}");
             this.InverseIndex = new ConcurrentDictionary<
                 string, ConcurrentDictionary<
-                    string, List<int>
+                    int, List<int>
                 >
             >();
         }
         
         try 
         {
-            this.IdIndex = JsonSerializer.Deserialize<ConcurrentDictionary<int, string>>
+            this.IdIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, int>>
             (
                 File.ReadAllText(this.idIndexPath)
             );
@@ -94,7 +93,7 @@ class Index
         catch (Exception ex) 
         {
             Debug.WriteLine($"Error deserializing file {this.idIndexPath}: {ex}");
-            this.IdIndex = new ConcurrentDictionary<int, string>();
+            this.IdIndex = new ConcurrentDictionary<string, int>();
         }
 
     }
@@ -112,15 +111,15 @@ class Index
     public void Add(string path, FileIndexEntry entry)
     {
 
-        int pathId = this.IdIndex.Count + 1;
-        this.IdIndex.TryAdd(this.IdIndex.Count + 1, path);
         
+        int pathId = GetPathId(path);
+            
 
         // key, value, update func
-        this.FileIndex.AddOrUpdate(path, entry, (k, v) => entry);
+        this.FileIndex.AddOrUpdate(pathId, entry, (k, v) => entry);
 
-        //Prune the path from the InverseIndex (needed for updates. Add only runs on new or updated files).
-        PruneInverseIndex(path);
+        //Neded for updates. Add only runs on new or updated files:
+        RemovePathIdFromInverseIndex(pathId);
 
         // Update the InverseIndex
         for(var i = 0; i < entry.Stems.Length; i++)
@@ -132,8 +131,8 @@ class Index
                 // If it's not in dictionary add it using this function:
                 (kStem) =>
                 {
-                    var ranksDict = new ConcurrentDictionary<string, List<int>>();
-                    ranksDict.TryAdd(path, new List<int>() { i });
+                    var ranksDict = new ConcurrentDictionary<int, List<int>>();
+                    ranksDict.TryAdd(pathId, new List<int>() { i });
                     return ranksDict;
                 },
                 // If it is in dictionary update it using this function:
@@ -141,12 +140,12 @@ class Index
                 {
                     // For it's nested ConcurrentDictionary (ranks dictionary), also AddOrUpdate
                     vRanksDictionary.AddOrUpdate(
-                        path,
+                        pathId,
                         (key) =>
                         {
                             return new List<int>() { i };
                         },
-                        (kPath, vRanks) =>
+                        (kPathId, vRanks) =>
                         {
                             vRanks.Add(i);
                             return vRanks;
@@ -165,46 +164,43 @@ class Index
     /// <param name="foundFiles">A list of found paths</param>
     public void Prune(List<string> foundFiles)
     {
-        foreach (string path in this.FileIndex.Keys.Except(foundFiles))
+        int[] foundFilesIds = foundFiles.Select( path => 
         {
-            this.Remove(path);
-            PruneInverseIndex(path);
+            this.IdIndex.TryGetValue(path, out int id);
+            return id;
+        })
+        .ToArray();
+
+        foreach (int pathId in this.FileIndex.Keys.Except(foundFilesIds))
+        {
+            this.Remove(pathId);
         }
     }
 
-    private void PruneInverseIndex(string path)
+
+    public void Remove(int pathId)
     {
-        // Remove the rank dictionary entry for path
+        // Remove from the FileIndex
+        this.FileIndex.TryRemove(pathId, out FileIndexEntry entry);
+
+        // Remove from the InverseIndex
+        // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
+        RemovePathIdFromInverseIndex(pathId);
+    }
+
+    private void RemovePathIdFromInverseIndex(int pathId)
+    {
         foreach (string word in this.InverseIndex.Keys)
         {
-            if (this.InverseIndex.TryGetValue(word, out ConcurrentDictionary<string, List<int>> rankDict))
+            if (this.InverseIndex.TryGetValue(word, out ConcurrentDictionary<int, List<int>> rankDict))
             {
-                rankDict.Remove(path, out List<int> ranks);
+                rankDict.Remove(pathId, out List<int> ranks);
             }
 
             // If the word's rank dictionary is now empty, delete the word
             if (this.InverseIndex.TryGetValue(word, out rankDict) && rankDict.Count == 0)
             {
-                this.InverseIndex.Remove(word, out ConcurrentDictionary<string, List<int>> _);
-            }
-        }
-
-
-    }
-
-
-    public void Remove(string pathToRemove)
-    {
-        // Remove from the FileIndex
-        this.FileIndex.TryRemove(pathToRemove, out FileIndexEntry entry);
-
-        // Remove from the InverseIndex
-        // Iterates over all all the keys (stems) of InverseIndex, and where the stem's RankDict contains key matching the path, it will remove that dictionary item
-        foreach (var stem in this.InverseIndex)
-        {
-            if (stem.Value.ContainsKey(pathToRemove))
-            {
-                stem.Value.Remove(pathToRemove, out List<int> ranks);
+                this.InverseIndex.Remove(word, out ConcurrentDictionary<int, List<int>> _);
             }
         }
     }
@@ -213,8 +209,30 @@ class Index
     {
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));
+        File.WriteAllText(this.idIndexPath, JsonSerializer.Serialize(this.IdIndex));
     }
 
+    public bool FileUpToDate(FileModel file)
+    {
+        this.IdIndex.TryGetValue(file.Path, out int pathId);
+
+        return this.FileIndex.ContainsKey(pathId) && file.LastModified <= this.FileIndex[pathId].LastModified;
+    }
+    
+    // Check if path exists in this.IdIndex, if yes return it, otherwise add it and return the value
+    public int GetPathId(string path)
+    {
+        if (this.IdIndex.TryGetValue(path, out int pathId))
+        {
+            return pathId;
+        }
+        else
+        {
+            pathId = this.IdIndex.Count;
+            this.IdIndex.TryAdd(path, pathId);
+            return pathId;
+        }
+    }
 
     
 

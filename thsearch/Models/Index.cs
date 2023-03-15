@@ -20,8 +20,11 @@ class Index
         > 
     InverseIndex { get; }
 
+    public ConcurrentDictionary<int, string> IdIndex { get; }
+
     private string fileIndexPath;
     private string inverseIndexPath;
+    private string idIndexPath;
 
 
     /// <summary>
@@ -30,7 +33,7 @@ class Index
     /// <param name="fileIndexPath">a path to a json file</param>
     /// <param name="inverseIndexPath">a path to a json file<</param>
 
-    public Index(string fileIndexPath, string inverseIndexPath)
+    public Index(string fileIndexPath, string inverseIndexPath, string idIndexPath)
     {
 
         this.fileIndexPath = fileIndexPath;
@@ -80,21 +83,43 @@ class Index
                 >
             >();
         }
+        
+        try 
+        {
+            this.IdIndex = JsonSerializer.Deserialize<ConcurrentDictionary<int, string>>
+            (
+                File.ReadAllText(this.idIndexPath)
+            );
+        }
+        catch (Exception ex) 
+        {
+            Debug.WriteLine($"Error deserializing file {this.idIndexPath}: {ex}");
+            this.IdIndex = new ConcurrentDictionary<int, string>();
+        }
 
     }
 
     // TODO: change paths and words to be number ids to reduce lookup time and index size.
+    //  - A dictionary can store pathIds and and wordIds. When searching, only on match need to reveal pathId.
     // TODO: Use some compression to save read and write time. Read, decompress, deserialize.
+    // TODO: deserialize to binary
+
+    // TODO: benchmarking!
 
     /// <summary>
     /// Updates the downstream dependant InverseIndex at the same time. A FileIndexEntry also contains everything needed for a InverseIndexEntry
     /// </summary>
     public void Add(string path, FileIndexEntry entry)
     {
+
+        int pathId = this.IdIndex.Count + 1;
+        this.IdIndex.TryAdd(this.IdIndex.Count + 1, path);
+        
+
         // key, value, update func
         this.FileIndex.AddOrUpdate(path, entry, (k, v) => entry);
 
-        //Prune the path from the InverseIndex
+        //Prune the path from the InverseIndex (needed for updates. Add only runs on new or updated files).
         PruneInverseIndex(path);
 
         // Update the InverseIndex

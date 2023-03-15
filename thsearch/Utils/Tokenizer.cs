@@ -53,7 +53,6 @@ class Tokenizer
             // trim punctuation 
             string processedToken = token.Trim(this.punctuationChars);
 
-            //can also be a contains call with suffixes a hashset
             foreach (string suffix in this.suffixes)
             {
                 if (processedToken.EndsWith(suffix))

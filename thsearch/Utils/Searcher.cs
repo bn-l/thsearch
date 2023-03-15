@@ -34,7 +34,7 @@ class Searcher {
         
         foreach (var queryToken in queryTokens)
         {
-
+            
             // try get value and out it. If it's not there, skip this iteration (continue)
             if (!index.InverseIndex.TryGetValue(queryToken, out var ranksDictionary)) continue;
 

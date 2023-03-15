@@ -44,7 +44,7 @@ class Program
         configPath = Path.Combine(currentDirectory, configName + ".txt");
         ConfigFileParser config = new ConfigFileParser(configPath);
 
-        Index index = new Index(Path.Combine(currentDirectory, "fileIndex.json"), Path.Combine(currentDirectory, "inverseIndex.json"));
+        Index index = new Index(Path.Combine(currentDirectory, "fileIndex.json"), Path.Combine(currentDirectory, "inverseIndex.json"), Path.Combine(currentDirectory, "idIndex.json"));
 
 
         TxtExtractor txtExtractor = new TxtExtractor();

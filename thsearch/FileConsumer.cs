@@ -24,7 +24,6 @@ class FileConsumer {
         
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
         
-        
         string[] stems = tokenizer.Process(rawString);
 
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);

@@ -20,8 +20,10 @@ class Searcher {
     }
 
     // Enumerates over inverseIndex looking for query. It will then rank the results using the Tf-Idf method and return an array of int pathIds
-    public int[] TfIdf(Index index, string query)
+    public int[] TfIdf(IIndex index, string query)
     {
+
+        Stopwatch stopwatch = new Stopwatch();
 
         if(string.IsNullOrEmpty(query)) throw new ArgumentException("Query cannot be null or empty");
 
@@ -35,25 +37,21 @@ class Searcher {
         
         foreach (var queryToken in queryTokens)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             // try get value and out it. If it's not there, skip this iteration (continue)
 
-            if (!index.TryLookUpToken(queryToken, out var ranksDictionary)) continue;
+            if (!index.TryLookUpStem(queryToken, out List<(int, int)> occurrences)) continue;
 
-            stopwatch.Stop();
             Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to lookup {queryToken}");
 
             int totalDocs = index.GetFileCount();
-            int matchingDocs = ranksDictionary.Count;
+            int matchingDocs = occurrences.Count;
             // idf will be bigger, and give more weight to, terms that are relatively rare in the corpus
-            double idf = Math.Log10((double) (totalDocs + 1 / matchingDocs));
+            double idf = Math.Log10((totalDocs + 1 / matchingDocs));
 
             // Go over each document in the ranksDict and get frequency of the term in the documents
-            foreach (var (document, termFreqs) in ranksDictionary)
+            foreach (var (document, termFreqs) in occurrences)
             {
-                double tf = (double) termFreqs.Count;
+                double tf = termFreqs;
                 double tfIdf = tf * idf;
 
                 
@@ -64,10 +62,12 @@ class Searcher {
 
         }
 
-       return resultScores
-            .OrderByDescending(pair => pair.Value)
-            .Select(pair => pair.Key)
-            .ToArray();
+        Console.WriteLine($"Search in total took {stopwatch.ElapsedMilliseconds} ms");
+
+        return resultScores
+                .OrderByDescending(pair => pair.Value)
+                .Select(pair => pair.Key)
+                .ToArray();
 
     }
 

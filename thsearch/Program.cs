@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Diagnostics;
 
 class Program
 {
@@ -44,7 +45,7 @@ class Program
         configPath = Path.Combine(currentDirectory, configName + ".txt");
         ConfigFileParser config = new ConfigFileParser(configPath);
 
-        Index index = new Index(Path.Combine(currentDirectory, "fileIndex.json"), Path.Combine(currentDirectory, "inverseIndex.json"), Path.Combine(currentDirectory, "idIndex.json"));
+        IIndex index = new IndexSqlite(Path.Combine(currentDirectory, "index.sqlite"));
 
 
         TxtExtractor txtExtractor = new TxtExtractor();
@@ -101,22 +102,42 @@ class Program
         // Wait for the producer task to complete
         // producerTask.Wait();
 
+        Stopwatch stopwatch = new Stopwatch();
+
+        stopwatch.Start();
+
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
 
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
+        stopwatch.Reset();
+
         // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
+        stopwatch.Start();
+
         index.Prune(foundFiles);
 
-        // Index has been updated. Let's save it to disk.
-        index.Save();
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
+        stopwatch.Reset();
+
+        stopwatch.Start();
+
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
+        stopwatch.Reset();
 
         Searcher searcher = new Searcher(tokenizer);
 
+
+        stopwatch.Start();
 
         foreach (int idResult in searcher.TfIdf(index, searchString))
         {
             Console.WriteLine(index.GetPath(idResult));
         }
 
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
+        stopwatch.Reset();
+
+        index.Finished();
     }
 
 

@@ -8,8 +8,9 @@ using System.Diagnostics;
 
 // Represents and operates on the FileIndex and the InverseIndex. The InverseIndex is always downstream from the FileIndex. 
 
-class Index: IIndex
+class Index
 {
+    Stopwatch stopwatch = new Stopwatch();
 
     // int pathId : FileIndexEntry entry
     private ConcurrentDictionary<int, FileIndexEntry> FileIndex { get; }
@@ -36,6 +37,7 @@ class Index: IIndex
 
     public Index(string fileIndexPath, string inverseIndexPath, string idIndexPath)
     {
+        stopwatch.Start();
 
         this.fileIndexPath = fileIndexPath;
         this.inverseIndexPath = inverseIndexPath;
@@ -97,6 +99,8 @@ class Index: IIndex
             this.IdIndex = new ConcurrentDictionary<string, int>();
         }
 
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run index's constructor");
+        stopwatch.Reset();
     }
 
     // TODO: change paths and words to be number ids to reduce lookup time and index size.
@@ -112,7 +116,6 @@ class Index: IIndex
     public void Add(string path, FileIndexEntry entry)
     {
 
-        
         int pathId = GetPathId(path);
             
 
@@ -206,7 +209,7 @@ class Index: IIndex
         }
     }
 
-    public void Save()
+    public void Finished()
     {
         File.WriteAllText(this.fileIndexPath, JsonSerializer.Serialize(this.FileIndex));
         File.WriteAllText(this.inverseIndexPath, JsonSerializer.Serialize(this.InverseIndex));
@@ -246,10 +249,10 @@ class Index: IIndex
         return this.IdIndex.FirstOrDefault(x => x.Value == fileId).Key;
     }
 
-    public bool TryLookUpToken(string token, out IDictionary<int, List<int>> ranksDictionary)
+    public bool TryLookUpStem(string stem, out IDictionary<int, List<int>> ranksDictionary)
     {
         ConcurrentDictionary<int, List<int>> concurrentDictionary;
-        bool result = this.InverseIndex.TryGetValue(token, out concurrentDictionary);
+        bool result = this.InverseIndex.TryGetValue(stem, out concurrentDictionary);
         ranksDictionary = concurrentDictionary;
         return result;
     }

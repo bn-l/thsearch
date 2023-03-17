@@ -3,14 +3,32 @@ namespace thsearch;
 
 class FileIndexEntry
 {
-    public DateTime LastModified { get; set; }
-    public string[] Stems { get; set; }
+    public DateTime LastModified { get; }
+    public string[] Stems { get; }
+    public HashSet<string> StemSet { get; }
+    public Dictionary<string, int> stemFrequency;
 
     public FileIndexEntry(DateTime lastModified, string[] stems)
     {
         this.LastModified = lastModified;
         this.Stems = stems;
+        this.stemFrequency = new Dictionary<string, int>();
+        this.StemSet = new HashSet<string>(stems);
+
+        foreach (string stem in stems)
+        {
+            if (stemFrequency.ContainsKey(stem))
+            {
+                stemFrequency[stem]++;
+            }
+            else
+            {
+                stemFrequency.Add(stem, 1);
+            }
+        }
     }
+
+    
 
 }
 

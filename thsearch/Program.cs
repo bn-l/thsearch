@@ -114,7 +114,7 @@ class Program
 
         foreach (int idResult in searcher.TfIdf(index, searchString))
         {
-            Console.WriteLine(index.IdIndex.FirstOrDefault(x => x.Value == idResult).Key);
+            Console.WriteLine(index.GetPath(idResult));
         }
 
     }

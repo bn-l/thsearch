@@ -8,19 +8,20 @@ using System.Diagnostics;
 
 // Represents and operates on the FileIndex and the InverseIndex. The InverseIndex is always downstream from the FileIndex. 
 
-class Index
+class Index: IIndex
 {
-    // int pathId : FileIndexEntry entry
-    public ConcurrentDictionary<int, FileIndexEntry> FileIndex { get; }
 
-    public ConcurrentDictionary<
+    // int pathId : FileIndexEntry entry
+    private ConcurrentDictionary<int, FileIndexEntry> FileIndex { get; }
+
+    private ConcurrentDictionary<
         string, ConcurrentDictionary<
             int, List<int>
             >
         > 
     InverseIndex { get; }
 
-    public ConcurrentDictionary<string, int> IdIndex { get; }
+    private ConcurrentDictionary<string, int> IdIndex { get; }
 
     private string fileIndexPath;
     private string inverseIndexPath;
@@ -234,6 +235,26 @@ class Index
         }
     }
 
-    
+
+    public int GetFileCount()
+    {
+        return this.FileIndex.Count;
+    }
+
+    public string GetPath(int fileId)
+    {
+        return this.IdIndex.FirstOrDefault(x => x.Value == fileId).Key;
+    }
+
+    public bool TryLookUpToken(string token, out IDictionary<int, List<int>> ranksDictionary)
+    {
+        ConcurrentDictionary<int, List<int>> concurrentDictionary;
+        bool result = this.InverseIndex.TryGetValue(token, out concurrentDictionary);
+        ranksDictionary = concurrentDictionary;
+        return result;
+    }
+
+
+// Argument 2: cannot convert from 'out System.Collections.Generic.IDictionary<int, System.Collections.Generic.List<int>>' to 'out System.Collections.Concurrent.ConcurrentDictionary<int, System.Collections.Generic.List<int>>' [thsearch]
 
 }

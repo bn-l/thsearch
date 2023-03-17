@@ -2,6 +2,7 @@ namespace thsearch;
     
 
 using System.Globalization;
+using System.Diagnostics;
 
 // Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer.
 
@@ -34,11 +35,17 @@ class Searcher {
         
         foreach (var queryToken in queryTokens)
         {
-            
-            // try get value and out it. If it's not there, skip this iteration (continue)
-            if (!index.InverseIndex.TryGetValue(queryToken, out var ranksDictionary)) continue;
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-            int totalDocs = index.FileIndex.Count;
+            // try get value and out it. If it's not there, skip this iteration (continue)
+
+            if (!index.TryLookUpToken(queryToken, out var ranksDictionary)) continue;
+
+            stopwatch.Stop();
+            Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to lookup {queryToken}");
+
+            int totalDocs = index.GetFileCount();
             int matchingDocs = ranksDictionary.Count;
             // idf will be bigger, and give more weight to, terms that are relatively rare in the corpus
             double idf = Math.Log10((double) (totalDocs + 1 / matchingDocs));

@@ -6,8 +6,6 @@ using System.Diagnostics;
 
 // Searcher is a utility class that provides methods that match the delegate type parameter of Index.Search. It is initialized with a Tokenizer and a Stemmer.
 
-// TODO: InverseIndex is a concurrent dictionary, can it be multithreaded searched? (Could have one producer thread that iterates over the keys of the dictionary, adding each to a concurrentqueue)
-
 
 class Searcher {
 

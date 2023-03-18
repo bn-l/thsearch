@@ -18,7 +18,6 @@ interface IIndex
     string GetPath(int fileId);
 
     // takes a stem and if it exists in the stems table, will return an array of tuples of fileIds to occurances.
-    // TODO: Update searcher and Index.cs to accept this new method signature
     bool TryLookUpStem(string stem, out List<(int, int)> occurances);
 
     void Finished();

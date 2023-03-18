@@ -47,6 +47,7 @@ class Program
 
         IIndex index = new IndexSqlite(Path.Combine(currentDirectory, "index.sqlite"));
 
+        // TODO: Test the extractors on all types
 
         TxtExtractor txtExtractor = new TxtExtractor();
         PdfExtractor pdfExtractor = new PdfExtractor();

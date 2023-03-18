@@ -46,7 +46,6 @@ class IndexSqlite : IIndex
         }
     }
 
-    // TODO: Test with modified files
     public void Add(string path, FileIndexEntry entry)
     {
         int fileId;

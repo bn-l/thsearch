@@ -59,7 +59,7 @@ class IndexSqlite : IIndex
 
             //using (var transaction = connection.BeginTransaction)
 
-                upsertFileCmd.CommandText = @"
+            upsertFileCmd.CommandText = @"
                 UPDATE Files SET lastmodified = $lastmodified WHERE path = $path;
                 INSERT OR IGNORE INTO Files (path, lastmodified) VALUES ($path, $lastmodified);
                 SELECT last_insert_rowid();";
@@ -80,24 +80,24 @@ class IndexSqlite : IIndex
         {
             connection.Open();
 
-            // STEMS
-            foreach (var stemSetBatch in entry.StemSet.Chunk(900))
+            SqliteCommand command = connection.CreateCommand();
+
+            using (var transaction = connection.BeginTransaction())
             {
-                string stemPlaceholders = string.Join(",", stemSetBatch.Select((s, j) => $"(@stem{j}, @file_id{j}, @occurrences{j})"));
+                command.Transaction = transaction;
 
-                var upsertStemCmd = connection.CreateCommand();
-                upsertStemCmd.CommandText = $"INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES {stemPlaceholders}";
-
-                int j = 0;
-                foreach (string stem in stemSetBatch)
+                foreach (var stem in entry.StemSet)
                 {
-                    upsertStemCmd.Parameters.AddWithValue($"@stem{j}", stem);
-                    upsertStemCmd.Parameters.AddWithValue($"@file_id{j}", fileId);
-                    upsertStemCmd.Parameters.AddWithValue($"@occurrences{j}", entry.stemFrequency[stem]);
-                    j++;
+                    command.Parameters.Clear(); // Clear parameters before adding new ones
+                    command.CommandText = $"INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences)";
+                    command.Parameters.AddWithValue("$stem", stem);
+                    command.Parameters.AddWithValue("$file_id", fileId);
+                    command.Parameters.AddWithValue("$occurrences", entry.stemFrequency[stem]);
+
+                    command.ExecuteNonQuery();
                 }
 
-                upsertStemCmd.ExecuteNonQuery();
+                transaction.Commit();
             }
         }
 

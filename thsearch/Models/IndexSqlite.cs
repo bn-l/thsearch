@@ -56,7 +56,10 @@ class IndexSqlite : IIndex
 
             // FILES
             SqliteCommand upsertFileCmd = connection.CreateCommand();
-            upsertFileCmd.CommandText = @"
+
+            //using (var transaction = connection.BeginTransaction)
+
+                upsertFileCmd.CommandText = @"
                 UPDATE Files SET lastmodified = $lastmodified WHERE path = $path;
                 INSERT OR IGNORE INTO Files (path, lastmodified) VALUES ($path, $lastmodified);
                 SELECT last_insert_rowid();";
@@ -68,6 +71,11 @@ class IndexSqlite : IIndex
             fileId = Convert.ToInt32(fileId64);
         }
 
+        AddStems(fileId, entry);
+    }
+
+    private void AddStems(int fileId, FileIndexEntry entry)
+    {
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
             connection.Open();

@@ -4,11 +4,11 @@ namespace thsearch;
 class FileIndexEntry
 {
     public DateTime LastModified { get; }
-    public string[] Stems { get; }
+    public List<string> Stems { get; }
     public HashSet<string> StemSet { get; }
     public Dictionary<string, int> stemFrequency;
 
-    public FileIndexEntry(DateTime lastModified, string[] stems)
+    public FileIndexEntry(DateTime lastModified, List<string> stems)
     {
         this.LastModified = lastModified;
         this.Stems = stems;

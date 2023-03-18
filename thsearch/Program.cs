@@ -55,7 +55,7 @@ class Program
         EpubExtractor epubExtractor = new EpubExtractor();
         StringExtractor stringExtractor = new StringExtractor(new IExtractor[] { txtExtractor, pdfExtractor, htmlExtractor, epubExtractor }, txtExtractor);
 
-        Tokenizer tokenizer = new Tokenizer();
+        ITokenizer tokenizer = new TokenizerSpans();
 
         FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions);
 
@@ -126,7 +126,7 @@ class Program
         stopwatch.Reset();
 
         Searcher searcher = new Searcher(tokenizer);
-
+        
 
         stopwatch.Start();
 

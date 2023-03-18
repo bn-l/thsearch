@@ -1,7 +1,7 @@
 namespace thsearch;
 
 
-class Tokenizer
+class Tokenizer: ITokenizer
 {
     private readonly char[] punctuationChars;
 
@@ -36,7 +36,7 @@ class Tokenizer
     // TODO: remove special characters, escapes sequences, \n, \t, etc.
     // - Need to remove these and all special characters before spliting.
 
-    public string[] Process(string text)
+    public List<string> Process(string text)
     {
         // lower case split of words
         string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -67,7 +67,7 @@ class Tokenizer
             processedTokens.Add(processedToken);
         }
 
-        return processedTokens.ToArray();
+        return processedTokens;
 
     }
 

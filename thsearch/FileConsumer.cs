@@ -12,9 +12,9 @@ using System.Diagnostics;
 class FileConsumer {
     private IIndex index;
     private StringExtractor stringExtractor;
-    private Tokenizer tokenizer;
+    private ITokenizer tokenizer;
 
-    public FileConsumer(IIndex index, StringExtractor stringExtractor, Tokenizer tokenizer) {
+    public FileConsumer(IIndex index, StringExtractor stringExtractor, ITokenizer tokenizer) {
         this.index = index;
         this.stringExtractor = stringExtractor;
         this.tokenizer = tokenizer;
@@ -29,7 +29,7 @@ class FileConsumer {
         stopwatch.Start(); // !START
 
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
-        string[] stems = tokenizer.Process(rawString);
+        List<string> stems = tokenizer.Process(rawString);
 
         stopwatch.Stop(); // STOP
         var extractAndStemTime = stopwatch.ElapsedMilliseconds;

@@ -9,9 +9,9 @@ using System.Diagnostics;
 
 class Searcher {
 
-    private Tokenizer tokenizer;
+    private ITokenizer tokenizer;
 
-    public Searcher(Tokenizer tokenizer) {
+    public Searcher(ITokenizer tokenizer) {
 
         this.tokenizer = tokenizer;
         

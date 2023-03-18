@@ -1,0 +1,10 @@
+Spans: (used ~25% of memory as non-spans)
+It took 199818 ms to process all files
+It took 631 ms to prune
+
+Non spans:
+It took 182361 ms to process all files
+It took 552 ms to prune
+
+Spans with punction method 2:
+90191 ms

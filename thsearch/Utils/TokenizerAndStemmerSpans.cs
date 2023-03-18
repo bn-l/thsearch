@@ -2,10 +2,11 @@ namespace thsearch;
 using CommunityToolkit.HighPerformance.Enumerables;
 using CommunityToolkit.HighPerformance;
 using System.Diagnostics;
+using System.Linq;
 
 // TODO: Fix this and test out its perfomance vs the string.split tokenizer
 
-class TokenizerAndStemmer
+class TokenizerSpans: ITokenizer
 {
 
     private readonly char[] punctuationChars;
@@ -15,7 +16,8 @@ class TokenizerAndStemmer
     private readonly HashSet<string> stopWords;
 
 
-    public TokenizerAndStemmer(char[] trimChars = null, string[] suffixes = null, HashSet<string> stopWords = null)
+
+    public TokenizerSpans(char[] trimChars = null, string[] suffixes = null, HashSet<string> stopWords = null)
     {
 
         this.punctuationChars = trimChars ??
@@ -35,52 +37,76 @@ class TokenizerAndStemmer
             {
                 "a", "an",  "and",  "are",  "as",  "at",  "be",  "but",  "by",  "for",  "if",  "in",  "into",  "is",  "it", "not",  "of",  "on",  "or",  "such",  "that",  "the",  "their",  "then",  "there",  "these",  "they",  "this",  "to",  "was",  "will",  "with"
             };
+
     }
 
 
 
     public List<string> Process(string text)
     {
-       
+
+        // TODO: Special characters are converted to escape sequences. E.g. ë becomes \u00EB
+
+        // TODO: Stop word removal
+
+        // Examine token for stop words, suffixes, then punctuation chars--create a new span each time
+
+        // Then add to string List stems
 
         List<string> stems = new List<string>();
 
-        // Each ReadOnlySpan<char> token in this loop is trimmed of ',' and added to the return value
         foreach (ReadOnlySpan<char> token in text.Tokenize(' '))
         {
-            // TODO: Special characters are converted to escape sequences. E.g. ë becomes \u00EB
+            // Remove any leading or trailing punctuation characters from the token
+            // ReadOnlySpan<char> trimmedToken = token.Trim(punctuationChars);
 
-            // TODO: Stop word removal
+            ReadOnlySpan<char> trimmedToken = RemovePunctuation(token);
 
-            // Examine token for stop words, suffixes, then punctuation chars--create a new span each time
+            // Remove any suffixes from the token
+            ReadOnlySpan<char> stemmedSpan = RemoveSuffixes(trimmedToken);
 
-            // Then add to string List stems
+            string stemmedString = stemmedSpan.ToString().ToLower();
 
-
-            
-
-
-            ReadOnlySpan<char> tokenPunctuationTrimmed = token.Trim(this.punctuationChars.AsSpan());
-
-            foreach (string suffix in this.suffixes)
+            // Check if the resulting token is a stop word
+            if (stopWords.Contains(stemmedString))
             {
-                if (tokenPunctuationTrimmed.EndsWith(suffix))
-                {
-                    int suffixLength = suffix.Length;
-                    ReadOnlySpan<char> stem =
-                        tokenPunctuationTrimmed.Slice
-                        (
-                            0, tokenPunctuationTrimmed.Length - suffixLength
-                        );
-
-                    // Punctuation removed, suffixes removed, token is now a "stem". Convert to a string.
-                    stems.Add(new string(stem));
-
-                }
+                continue;
             }
+
+            stems.Add(stemmedString);
         }
 
         return stems;
+    }
+
+    private ReadOnlySpan<char> RemoveSuffixes(ReadOnlySpan<char> token)
+    {
+        foreach (string suffix in suffixes)
+        {
+            if (token.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                return token.Slice(0, token.Length - suffix.Length);
+            }
+        }
+        return token;
+    }
+
+    private ReadOnlySpan<char> RemovePunctuation(ReadOnlySpan<char> token)
+    {
+        Span<char> outputSpan = new char[token.Length];
+
+        int outputIndex = 0;
+        foreach (char c in token)
+        {
+            if (char.IsLetter(c))
+            {
+                outputSpan[outputIndex++] = c;
+            }
+        }
+
+        ReadOnlySpan<char> outPut = outputSpan.Slice(0, outputIndex);
+
+        return outPut;
     }
 
 }

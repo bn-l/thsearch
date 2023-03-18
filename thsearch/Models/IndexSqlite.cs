@@ -27,7 +27,7 @@ class IndexSqlite : IIndex
             var createFilesTableCmd = connection.CreateCommand();
             createFilesTableCmd.CommandText = @"
                 CREATE TABLE Files (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id INTEGER PRIMARY KEY,
                     path TEXT UNIQUE NOT NULL,
                     lastmodified TEXT NOT NULL
                 )";
@@ -36,7 +36,8 @@ class IndexSqlite : IIndex
             var createStemsTableCmd = connection.CreateCommand();
             createStemsTableCmd.CommandText = @"
                 CREATE TABLE Stems (
-                    stem TEXT PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
+                    stem TEXT,
                     file_id INTEGER NOT NULL,
                     occurrences INTEGER NOT NULL,
                     FOREIGN KEY(file_id) REFERENCES Files(id)
@@ -45,6 +46,7 @@ class IndexSqlite : IIndex
         }
     }
 
+    // TODO: Test with modified files
     public void Add(string path, FileIndexEntry entry)
     {
         int fileId;
@@ -56,33 +58,42 @@ class IndexSqlite : IIndex
             // FILES
             SqliteCommand upsertFileCmd = connection.CreateCommand();
             upsertFileCmd.CommandText = @"
-                INSERT OR REPLACE INTO Files (path, lastmodified) 
-                VALUES ($path, $lastmodified);
+                UPDATE Files SET lastmodified = $lastmodified WHERE path = $path;
+                INSERT OR IGNORE INTO Files (path, lastmodified) VALUES ($path, $lastmodified);
                 SELECT last_insert_rowid();";
             upsertFileCmd.Parameters.AddWithValue("$path", path);
             upsertFileCmd.Parameters.AddWithValue("$lastmodified", entry.LastModified.ToString());
 
+            //  'SQLite Error 19: 'FOREIGN KEY constraint failed'.'
             var fileId64 = upsertFileCmd.ExecuteScalar();
             fileId = Convert.ToInt32(fileId64);
         }
+
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
             connection.Open();
 
             // STEMS
-            // TODO: A query is executed for every single stem. Is there a way to batch this?
-            foreach (string stem in entry.StemSet)
+            foreach (var stemSetBatch in entry.StemSet.Chunk(900))
             {
-                SqliteCommand upsertStemCmd = connection.CreateCommand();
-                upsertStemCmd.CommandText = @"
-                    INSERT OR REPLACE INTO Stems (stem, file_id, occurrences)
-                    VALUES ($stem, $file_id, $occurrences)";
-                upsertStemCmd.Parameters.AddWithValue("$stem", stem);
-                upsertStemCmd.Parameters.AddWithValue("$file_id", fileId);
-                upsertStemCmd.Parameters.AddWithValue("$occurrences", entry.stemFrequency[stem]);
+                string stemPlaceholders = string.Join(",", stemSetBatch.Select((s, j) => $"(@stem{j}, @file_id{j}, @occurrences{j})"));
+
+                var upsertStemCmd = connection.CreateCommand();
+                upsertStemCmd.CommandText = $"INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES {stemPlaceholders}";
+
+                int j = 0;
+                foreach (string stem in stemSetBatch)
+                {
+                    upsertStemCmd.Parameters.AddWithValue($"@stem{j}", stem);
+                    upsertStemCmd.Parameters.AddWithValue($"@file_id{j}", fileId);
+                    upsertStemCmd.Parameters.AddWithValue($"@occurrences{j}", entry.stemFrequency[stem]);
+                    j++;
+                }
+
                 upsertStemCmd.ExecuteNonQuery();
             }
         }
+
     }
 
 
@@ -91,16 +102,25 @@ class IndexSqlite : IIndex
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
             connection.Open();
-            // Delete all files not found in the current directory
-            var deleteCmd = connection.CreateCommand();
-            deleteCmd.CommandText = @"
-                DELETE FROM Files WHERE path NOT IN ($paths)";
-            deleteCmd.Parameters.AddWithValue("$paths", String.Join(",", foundFiles));
-            deleteCmd.ExecuteNonQuery();
+
+            // Delete stems not associated with files in foundFiles
+            SqliteCommand deleteStemsCmd = connection.CreateCommand();
+            string foundPlaceholders = string.Join(",", foundFiles.Select((s, i) => $"@path{i}"));
+            deleteStemsCmd.CommandText = $@"
+                DELETE FROM Stems
+                WHERE file_id NOT IN (
+                    SELECT id FROM Files WHERE path IN ({foundPlaceholders})
+                );
+                DELETE FROM Files WHERE path NOT IN ({foundPlaceholders})";
+            for (var i = 0; i < foundFiles.Count; i++)
+            {
+                deleteStemsCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
+            }
+            deleteStemsCmd.ExecuteNonQuery();
         }
     }
 
-    public bool FileUpToDate(FileModel file)
+    public bool RecordUpToDate(FileModel file)
     {
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
@@ -114,15 +134,21 @@ class IndexSqlite : IIndex
             
             string lastModifiedString = (string)selectCmd.ExecuteScalar();
 
-            if (lastModifiedString == null)
-            {
-                return false;
-            }
-            else
-            {
-                return DateTime.Parse(lastModifiedString) >= file.LastModified;
-            }
+            if (lastModifiedString == null ) { return false;  }
+
+            DateTime dbFileDate = DateTime.Parse(lastModifiedString);
+
+            return DateTime.Compare
+            (
+                TruncateMilliseconds(dbFileDate),
+                TruncateMilliseconds(file.LastModified)
+            ) == 0;
+
         }
+    }
+    private DateTime TruncateMilliseconds(DateTime dateTime)
+    {
+        return dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerSecond));
     }
 
     public int GetFileCount()

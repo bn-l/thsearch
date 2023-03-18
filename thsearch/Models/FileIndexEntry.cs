@@ -8,6 +8,8 @@ class FileIndexEntry
     public HashSet<string> StemSet { get; }
     public Dictionary<string, int> stemFrequency;
 
+    // TODO: Implement IDisposable so this can be disposed of in a using closure after being saved to index
+
     public FileIndexEntry(DateTime lastModified, string[] stems)
     {
         this.LastModified = lastModified;

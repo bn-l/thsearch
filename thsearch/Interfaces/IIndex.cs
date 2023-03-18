@@ -9,7 +9,7 @@ interface IIndex
     void Prune(List<string> foundFiles);
 
     // If file exists in the Files and is not out of date, return true
-    bool FileUpToDate(FileModel file);
+    bool RecordUpToDate(FileModel file);
 
     // Total files in the File table
     int GetFileCount();

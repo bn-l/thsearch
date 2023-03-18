@@ -2,6 +2,7 @@ namespace thsearch;
 
 using System.IO;
 using static System.Net.WebRequestMethods;
+using System.Diagnostics;
 
 
 
@@ -21,16 +22,31 @@ class FileConsumer {
 
     public void Consume(FileModel file) {
 
-        //SQL logic error no such table: Files'
-        if (this.index.FileUpToDate(file)) return;
+        Stopwatch stopwatch = new Stopwatch();
+
+        // TODO: Not properly returning when file is up to date
+        if (this.index.RecordUpToDate(file)) return;
         
+        stopwatch.Start(); // !START
+
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
-        
         string[] stems = tokenizer.Process(rawString);
 
+        stopwatch.Stop(); // STOP
+        var extractAndStemTime = stopwatch.ElapsedMilliseconds;
+        stopwatch.Reset();
+
+        stopwatch.Start(); // !START
+
         FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
-        
         this.index.Add(file.Path, entry);
+
+
+        stopwatch.Stop(); // STOP
+        var addingTime = stopwatch.ElapsedMilliseconds;
+        stopwatch.Reset();
+
+        Console.WriteLine($"Extracting and stemming: {extractAndStemTime}ms, Adding to index: {addingTime}ms");
     
     }
 }

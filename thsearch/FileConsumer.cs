@@ -24,7 +24,6 @@ class FileConsumer {
 
         Stopwatch stopwatch = new Stopwatch();
 
-        // TODO: Not properly returning when file is up to date
         if (this.index.RecordUpToDate(file)) return;
         
         stopwatch.Start(); // !START

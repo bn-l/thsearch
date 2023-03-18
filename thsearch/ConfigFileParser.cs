@@ -3,8 +3,6 @@ namespace thsearch;
 
 // Gives a list of included directories, excluded directories and file extensions from the thsearch.txt file
 
-// TODO: Tests if directory exists. If no, throw exception and exit.
-
 public class ConfigFileParser
 {
     public List<string> IncludedDirectories { get; private set; }

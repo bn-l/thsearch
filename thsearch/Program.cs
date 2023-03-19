@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Globalization;
 using System.Diagnostics;
 
+
 class Program
 {
 
@@ -18,7 +19,6 @@ class Program
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
 
         // !!! TODO: Remove stop words as well
-
 
         switch (args.Length)
         {

@@ -64,9 +64,12 @@ class IndexSqlite : IIndex
 
             // TODO: This query is very slow
             upsertFileCmd.CommandText = @"
-                UPDATE Files SET lastmodified = $lastmodified WHERE path = $path;
-                INSERT OR IGNORE INTO Files (path, lastmodified) VALUES ($path, $lastmodified);
-                SELECT last_insert_rowid();
+                INSERT INTO Files (path, lastmodified)
+                VALUES ($path, $lastmodified)
+                ON CONFLICT (path) DO UPDATE SET
+                    lastmodified=excluded.lastmodified
+                ;
+                SELECT id FROM Files WHERE path=$path;
             ";
             upsertFileCmd.Parameters.AddWithValue("$path", path);
             upsertFileCmd.Parameters.AddWithValue("$lastmodified", entry.LastModified.ToString());
@@ -76,7 +79,7 @@ class IndexSqlite : IIndex
             fileId = Convert.ToInt32(fileId64);
         }
 
-        AddStems(fileId, entry);
+        AddStems(fileId, entry);     
     }
 
     private void AddStems(int fileId, FileIndexEntry entry)
@@ -93,6 +96,7 @@ class IndexSqlite : IIndex
 
                 foreach (var stem in entry.StemSet)
                 {
+
                     command.Parameters.Clear(); // Clear parameters before adding new ones
                     // TODO: Make work when a file is changed without making slow
                     command.CommandText = $@"

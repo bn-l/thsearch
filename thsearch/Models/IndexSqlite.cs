@@ -12,11 +12,10 @@ class IndexSqlite : IIndex
     {
         this.dbPath = path;
 
-        if (!File.Exists(dbPath))
-        {
-            CreateDatabase();
-        }
+        if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0) {  CreateDatabase();  }
+        
     }
+
 
     private void CreateDatabase()
     {
@@ -47,6 +46,8 @@ class IndexSqlite : IIndex
             createStemsTableCmd.ExecuteNonQuery();
         }
     }
+
+    // Create a files transaction, create all the commands, and then commit it with a public commit method. Skip the uptodate check (and test if it works with it anyway)
 
     public void Add(string path, FileIndexEntry entry)
     {

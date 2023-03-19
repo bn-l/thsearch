@@ -3,6 +3,8 @@
 *.user
 *.sln.docstates
 notes/
+*.sqlite
+*.sqlite-journal
 
 # Build results
 [Dd]ebug/

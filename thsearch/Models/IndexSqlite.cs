@@ -30,7 +30,9 @@ class IndexSqlite : IIndex
                     id INTEGER PRIMARY KEY,
                     path TEXT UNIQUE NOT NULL,
                     lastmodified TEXT NOT NULL
-                )";
+                );
+                CREATE INDEX idx_files_path ON Files (path);
+            ";
             createFilesTableCmd.ExecuteNonQuery();
 
             var createStemsTableCmd = connection.CreateCommand();
@@ -59,10 +61,12 @@ class IndexSqlite : IIndex
 
             //using (var transaction = connection.BeginTransaction)
 
+            // TODO: This query is very slow
             upsertFileCmd.CommandText = @"
                 UPDATE Files SET lastmodified = $lastmodified WHERE path = $path;
                 INSERT OR IGNORE INTO Files (path, lastmodified) VALUES ($path, $lastmodified);
-                SELECT last_insert_rowid();";
+                SELECT last_insert_rowid();
+            ";
             upsertFileCmd.Parameters.AddWithValue("$path", path);
             upsertFileCmd.Parameters.AddWithValue("$lastmodified", entry.LastModified.ToString());
 
@@ -89,6 +93,7 @@ class IndexSqlite : IIndex
                 foreach (var stem in entry.StemSet)
                 {
                     command.Parameters.Clear(); // Clear parameters before adding new ones
+                    // TODO: Make work when a file is changed without making slow
                     command.CommandText = $"INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences)";
                     command.Parameters.AddWithValue("$stem", stem);
                     command.Parameters.AddWithValue("$file_id", fileId);
@@ -110,20 +115,35 @@ class IndexSqlite : IIndex
         {
             connection.Open();
 
-            // Delete stems not associated with files in foundFiles
-            SqliteCommand deleteStemsCmd = connection.CreateCommand();
+            SqliteCommand checkCmd = connection.CreateCommand();
+            SqliteCommand deleteCmd = connection.CreateCommand();
+
             string foundPlaceholders = string.Join(",", foundFiles.Select((s, i) => $"@path{i}"));
-            deleteStemsCmd.CommandText = $@"
+
+            checkCmd.CommandText = $@"
+                SELECT COUNT(*) FROM Files WHERE path NOT IN ({foundPlaceholders})
+            ";
+            deleteCmd.CommandText = $@"
                 DELETE FROM Stems
                 WHERE file_id NOT IN (
                     SELECT id FROM Files WHERE path IN ({foundPlaceholders})
                 );
-                DELETE FROM Files WHERE path NOT IN ({foundPlaceholders})";
+                DELETE FROM Files WHERE path NOT IN ({foundPlaceholders});
+                VACUUM;
+            ";
             for (var i = 0; i < foundFiles.Count; i++)
             {
-                deleteStemsCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
+                deleteCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
+                checkCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
             }
-            deleteStemsCmd.ExecuteNonQuery();
+
+            var numberNotInFound = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+            if (numberNotInFound > 100)
+            {
+                deleteCmd.ExecuteNonQuery();
+            }
+
         }
     }
 

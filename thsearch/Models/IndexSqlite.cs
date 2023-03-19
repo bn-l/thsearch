@@ -94,7 +94,9 @@ class IndexSqlite : IIndex
                 {
                     command.Parameters.Clear(); // Clear parameters before adding new ones
                     // TODO: Make work when a file is changed without making slow
-                    command.CommandText = $"INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences)";
+                    command.CommandText = $@"
+                        INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences);
+                    ";
                     command.Parameters.AddWithValue("$stem", stem);
                     command.Parameters.AddWithValue("$file_id", fileId);
                     command.Parameters.AddWithValue("$occurrences", entry.stemFrequency[stem]);

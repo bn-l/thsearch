@@ -47,7 +47,15 @@ class IndexSqlite : IIndex
         }
     }
 
-    // Create a files transaction, create all the commands, and then commit it with a public commit method. Skip the uptodate check (and test if it works with it anyway)
+    
+    // Split add into insert and update PUBLIC methods called from consumer. Need to check file's date anyway. Can store a boolean if it's out of date but exists. 
+
+    // Insert will add to the concurrent equivalent of a list of tuples. Update will call the current Add method. 
+
+    // the Finished method will commit outstanding inserts in the List in one go.
+
+
+   
 
     public void Add(string path, FileIndexEntry entry)
     {
@@ -59,8 +67,6 @@ class IndexSqlite : IIndex
 
             // FILES
             SqliteCommand upsertFileCmd = connection.CreateCommand();
-
-            //using (var transaction = connection.BeginTransaction)
 
             // TODO: This query is very slow
             upsertFileCmd.CommandText = @"

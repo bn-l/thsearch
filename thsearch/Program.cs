@@ -65,6 +65,8 @@ class Program
         BlockingCollection<FileModel> filesQueue = new BlockingCollection<FileModel>();
         // used for pruning later
         List<string> foundFiles = new List<string>();
+        
+        ConsoleUI consoleUI = new ConsoleUI();
 
 
         // Create the producer task
@@ -109,7 +111,7 @@ class Program
 
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
 
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
+        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
         stopwatch.Reset();
 
         // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
@@ -117,12 +119,12 @@ class Program
 
         index.Prune(foundFiles);
 
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
+        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
         stopwatch.Reset();
 
         stopwatch.Start();
 
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
+        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
         stopwatch.Reset();
 
         Searcher searcher = new Searcher(tokenizer);
@@ -130,12 +132,16 @@ class Program
 
         stopwatch.Start();
 
-        foreach (int idResult in searcher.TfIdf(index, searchString))
-        {
-            Console.WriteLine(index.GetPath(idResult));
-        }
+        List<string> results = searcher.TfIdf(index, searchString).Select(id => index.GetPath(id)).ToList();
 
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
+        consoleUI.DisplayResults(results);
+
+        // foreach (int idResult in searcher.TfIdf(index, searchString))
+        // {
+        //     Console.WriteLine(index.GetPath(idResult));
+        // }
+
+        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
         stopwatch.Reset();
 
         index.Finished();

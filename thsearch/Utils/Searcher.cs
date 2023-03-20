@@ -39,7 +39,7 @@ class Searcher {
 
             if (!index.TryLookUpStem(queryToken, out List<(int, int)> occurrences)) continue;
 
-            Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to lookup {queryToken}");
+            // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to lookup {queryToken}");
 
             int totalDocs = index.GetFileCount();
             int matchingDocs = occurrences.Count;
@@ -60,7 +60,7 @@ class Searcher {
 
         }
 
-        Console.WriteLine($"Search in total took {stopwatch.ElapsedMilliseconds} ms");
+        // Console.WriteLine($"Search in total took {stopwatch.ElapsedMilliseconds} ms");
 
         return resultScores
                 .OrderByDescending(pair => pair.Value)

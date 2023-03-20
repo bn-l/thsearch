@@ -31,6 +31,7 @@ as follows: thsearch.exe searchterm. </Description>
     <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
     <PackageReference Include="PdfPig" Version="0.1.7" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <PackageReference Include="Terminal.Gui" Version="1.10.0" />
   </ItemGroup>
 
 	<ItemGroup>

@@ -1,70 +1,80 @@
+namespace thsearch;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Sharpie;
 
 public class ConsoleUI
 {
-    private int loadingCount = 0;
-    private readonly SharpieWrapper sharpie;
-
-    public ConsoleUI()
-    {
-        sharpie = new SharpieWrapper();
-    }
+    private int loadingCount;
 
     public void UpdateLoadCount(int count)
     {
         loadingCount = count;
-        sharpie.MoveCursorUp();
-        sharpie.EraseLine();
-        sharpie.WriteLine($"File Queue: {loadingCount}");
+        Console.SetCursorPosition(0, Console.CursorTop);
+        Console.Write($"File Queue: {loadingCount}");
     }
 
     public void DisplayResults(List<string> results)
     {
-        sharpie.Clear();
-        foreach (string result in results)
-        {
-            sharpie.WriteLine(result);
-        }
-        sharpie.WaitForKey(ConsoleKey.UpArrow, ConsoleKey.DownArrow);
-    }
-}
-
-public class SharpieWrapper
-{
-    public void WriteLine(string value)
-    {
-        Console.WriteLine(value);
-    }
-
-    public void MoveCursorUp()
-    {
-        Console.CursorTop--;
-    }
-
-    public void EraseLine()
-    {
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write(new string(' ', Console.WindowWidth));
-        Console.SetCursorPosition(0, Console.CursorTop);
-    }
-
-    public void Clear()
-    {
         Console.Clear();
-    }
+        Console.WriteLine("Results:");
+        Console.WriteLine();
 
-    public void WaitForKey(params ConsoleKey[] keys)
-    {
-        Task.Run(() =>
+        int index = 0;
+        int pageSize = Console.WindowHeight - 3;
+
+        while (true)
         {
-            ConsoleKeyInfo keyInfo;
-            do
+            for (int i = 0; i < pageSize && index < results.Count; i++, index++)
             {
-                keyInfo = Console.ReadKey(true);
-            } while (Array.IndexOf(keys, keyInfo.Key) == -1);
-        }).Wait();
+                Console.WriteLine(results[index]);
+            }
+
+            Console.SetCursorPosition(0, Console.WindowHeight - 2);
+            Console.Write($"Page {index / pageSize + 1} / {results.Count / pageSize + 1}     ");
+
+            ConsoleKeyInfo key = Console.ReadKey(true);
+
+            if (key.Key == ConsoleKey.UpArrow)
+            {
+                if (index > 0)
+                {
+                    index--;
+                    Console.SetCursorPosition(0, Console.CursorTop - 1);
+                }
+            }
+            else if (key.Key == ConsoleKey.DownArrow)
+            {
+                if (index < results.Count - 1)
+                {
+                    index++;
+                    Console.SetCursorPosition(0, Console.CursorTop + 1);
+                }
+            }
+            else if (key.Key == ConsoleKey.LeftArrow)
+            {
+                index -= pageSize;
+
+                if (index < 0)
+                {
+                    index = 0;
+                }
+            }
+            else if (key.Key == ConsoleKey.RightArrow)
+            {
+                index += pageSize;
+
+                if (index >= results.Count)
+                {
+                    index = results.Count - 1;
+                }
+            }
+            else if (key.Key == ConsoleKey.Escape || key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.C)
+            {
+                break;
+            }
+        }
+
+        Console.Clear();
+        UpdateLoadCount(loadingCount);
     }
 }

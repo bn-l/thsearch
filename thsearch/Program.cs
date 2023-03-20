@@ -18,7 +18,8 @@ class Program
         string configPath;
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
 
-        // !!! TODO: Remove stop words as well
+        // TODO: By default should only show 10 results. Command line arg "all" will show all.
+
 
         switch (args.Length)
         {
@@ -65,8 +66,6 @@ class Program
         BlockingCollection<FileModel> filesQueue = new BlockingCollection<FileModel>();
         // used for pruning later
         List<string> foundFiles = new List<string>();
-        
-        ConsoleUI consoleUI = new ConsoleUI();
 
 
         // Create the producer task
@@ -107,44 +106,43 @@ class Program
 
         Stopwatch stopwatch = new Stopwatch();
 
-        stopwatch.Start();
+        stopwatch.Start(); // !START
 
         Task.WaitAll(producerTask, Task.WhenAll(consumerTasks));
 
-        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
-        stopwatch.Reset();
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
+        stopwatch.Reset(); // RESET 
 
         // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
-        stopwatch.Start();
+        stopwatch.Start(); // !START
 
+        index.Finished();
         index.Prune(foundFiles);
+    
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to add stems and prune");
+        stopwatch.Reset(); // RESET 
 
-        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
-        stopwatch.Reset();
+        stopwatch.Start();  // !START
 
-        stopwatch.Start();
-
-        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
-        stopwatch.Reset();
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
+        stopwatch.Reset(); // RESET 
 
         Searcher searcher = new Searcher(tokenizer);
         
 
-        stopwatch.Start();
+        stopwatch.Start();  // !START
 
         List<string> results = searcher.TfIdf(index, searchString).Select(id => index.GetPath(id)).ToList();
 
-        consoleUI.DisplayResults(results);
 
-        // foreach (int idResult in searcher.TfIdf(index, searchString))
-        // {
-        //     Console.WriteLine(index.GetPath(idResult));
-        // }
+        foreach (int idResult in searcher.TfIdf(index, searchString))
+        {
+            Console.WriteLine(index.GetPath(idResult));
+        }
 
-        // Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
-        stopwatch.Reset();
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
+        stopwatch.Reset(); // RESET 
 
-        index.Finished();
     }
 
 

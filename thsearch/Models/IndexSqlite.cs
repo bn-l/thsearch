@@ -3,17 +3,24 @@ namespace thsearch;
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
+using System.Collections.Concurrent;
 
 class IndexSqlite : IIndex
 {
     private readonly string dbPath;
+
+    private readonly ConcurrentBag<(int fileId, string stem, int occurrences)> stemsToInsert;
+
+
 
     public IndexSqlite(string path)
     {
         this.dbPath = path;
 
         if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0) {  CreateDatabase();  }
-        
+
+        stemsToInsert = new ConcurrentBag<(int fileId, string stem, int occurrences)>();
+    
     }
 
 
@@ -47,15 +54,15 @@ class IndexSqlite : IIndex
         }
     }
 
-    
-    // Split add into insert and update PUBLIC methods called from consumer. Need to check file's date anyway. Can store a boolean if it's out of date but exists. 
 
-    // Insert will add to the concurrent equivalent of a list of tuples. Update will call the current Add method. 
+    // TODO: Split into update and insert
+    // Add can be reused as update 
+    // Insert can add to a concurrent bag after all the updates are made. It will get the highest id number, and then add to the bag, incrementing that number as the id.
 
-    // the Finished method will commit outstanding inserts in the List in one go.
-
-
-   
+    public void Insert(string path, FileIndexEntry entry)
+    {
+        ;
+    }
 
     public void Add(string path, FileIndexEntry entry)
     {
@@ -85,80 +92,12 @@ class IndexSqlite : IIndex
             fileId = Convert.ToInt32(fileId64);
         }
 
-        AddStems(fileId, entry);     
-    }
-
-    private void AddStems(int fileId, FileIndexEntry entry)
-    {
-        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
+        foreach (var stem in entry.StemSet)
         {
-            connection.Open();
-
-            SqliteCommand command = connection.CreateCommand();
-
-            using (var transaction = connection.BeginTransaction())
-            {
-                command.Transaction = transaction;
-
-                foreach (var stem in entry.StemSet)
-                {
-
-                    command.Parameters.Clear(); // Clear parameters before adding new ones
-                    // TODO: Make work when a file is changed without making slow
-                    command.CommandText = $@"
-                        INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences);
-                    ";
-                    command.Parameters.AddWithValue("$stem", stem);
-                    command.Parameters.AddWithValue("$file_id", fileId);
-                    command.Parameters.AddWithValue("$occurrences", entry.stemFrequency[stem]);
-
-                    command.ExecuteNonQuery();
-                }
-
-                transaction.Commit();
-            }
-        }
-
-    }
-
-
-    public void Prune(List<string> foundFiles)
-    {
-        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
-        {
-            connection.Open();
-
-            SqliteCommand checkCmd = connection.CreateCommand();
-            SqliteCommand deleteCmd = connection.CreateCommand();
-
-            string foundPlaceholders = string.Join(",", foundFiles.Select((s, i) => $"@path{i}"));
-
-            checkCmd.CommandText = $@"
-                SELECT COUNT(*) FROM Files WHERE path NOT IN ({foundPlaceholders})
-            ";
-            deleteCmd.CommandText = $@"
-                DELETE FROM Stems
-                WHERE file_id NOT IN (
-                    SELECT id FROM Files WHERE path IN ({foundPlaceholders})
-                );
-                DELETE FROM Files WHERE path NOT IN ({foundPlaceholders});
-                VACUUM;
-            ";
-            for (var i = 0; i < foundFiles.Count; i++)
-            {
-                deleteCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
-                checkCmd.Parameters.AddWithValue($"@path{i}", foundFiles[i]);
-            }
-
-            var numberNotInFound = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-            if (numberNotInFound > 100)
-            {
-                deleteCmd.ExecuteNonQuery();
-            }
-
+            stemsToInsert.Add((fileId, stem, entry.stemFrequency[stem]));
         }
     }
+
 
     public bool RecordUpToDate(FileModel file)
     {
@@ -246,9 +185,76 @@ class IndexSqlite : IIndex
         }
     }
 
+    public void Prune(List<string> foundFiles)
+    {
+        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
+        {
+            connection.Open();
+
+            SqliteCommand checkCmd = connection.CreateCommand();
+            SqliteCommand deleteCmd = connection.CreateCommand();
+
+            checkCmd.CommandText = $@"
+                SELECT COUNT(*) FROM Files WHERE path NOT IN ($foundFiles)
+            ";
+            deleteCmd.CommandText = $@"
+                DELETE FROM Stems
+                WHERE file_id NOT IN (
+                    SELECT id FROM Files WHERE path IN ($foundFiles)
+                );
+                DELETE FROM Files WHERE path NOT IN ($foundFiles);
+                VACUUM;
+            ";
+
+            deleteCmd.Parameters.AddWithValue("$foundFiles",  string.Join(",", foundFiles));
+            checkCmd.Parameters.AddWithValue("$foundFiles",  string.Join(",", foundFiles));
+
+
+            // : 'SQLite Error 1: 'too many SQL variables'.'
+            var numberNotInFound = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+            if (numberNotInFound > 100)
+            {
+                deleteCmd.ExecuteNonQuery();
+            }
+        }
+    }
+
     public void Finished()
     {
-        // Nothing to do here
+        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
+        {
+            connection.Open();
+
+            SqliteCommand command = connection.CreateCommand();
+
+            // foreach (var chunk in stemsToInsert.Chunk(2000))
+            // {
+
+                using (var transaction = connection.BeginTransaction())
+                {
+                    command.Transaction = transaction;
+
+                    foreach (var (fileId, stem, occurrences) in stemsToInsert)
+                    {
+                        command.Parameters.Clear(); // Clear parameters before adding new ones
+                        command.CommandText = $@"
+                            INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences);
+                        ";
+                        command.Parameters.AddWithValue("$stem", stem);
+                        command.Parameters.AddWithValue("$file_id", fileId);
+                        command.Parameters.AddWithValue("$occurrences", occurrences);
+
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                }
+
+            }
+        // }
+
+        stemsToInsert.Clear();
     }
 
 

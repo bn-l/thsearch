@@ -45,7 +45,7 @@ class FileConsumer {
         var addingTime = stopwatch.ElapsedMilliseconds;
         stopwatch.Reset();
 
-        // Console.WriteLine($"Extracting and stemming: {extractAndStemTime}ms, Adding to index: {addingTime}ms");
+        Console.WriteLine($"Extracting and stemming: {extractAndStemTime}ms, Adding to index: {addingTime}ms");
     
     }
 }

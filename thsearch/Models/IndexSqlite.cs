@@ -12,6 +12,8 @@ class IndexSqlite : IIndex
 
     // private readonly ConcurrentBag<(int fileId, string stem, int occurrences)> stemsToInsert;
 
+    SqliteTransaction indexTransaction;
+    SqliteConnection indexConnection;
 
 
     public IndexSqlite(string path)
@@ -20,7 +22,14 @@ class IndexSqlite : IIndex
 
         if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0) {  CreateDatabase();  }
 
+        this.indexConnection = new SqliteConnection($"Data Source={dbPath}");
+        this.indexConnection.Open();
+        this.indexTransaction = indexConnection.BeginTransaction();
+
+
         // stemsToInsert = new ConcurrentBag<(int fileId, string stem, int occurrences)>();
+        
+
     
     }
 
@@ -51,8 +60,14 @@ class IndexSqlite : IIndex
                     occurrences INTEGER NOT NULL,
                     FOREIGN KEY(file_id) REFERENCES Files(id)
                 )";
+                
             createStemsTableCmd.ExecuteNonQuery();
+
+            var pragmaCmd = connection.CreateCommand();
+            pragmaCmd.CommandText = "PRAGMA cache_size=100000; PRAGMA journal_mode = wal2; BEGIN CONCURRENT;";
+            pragmaCmd.ExecuteNonQuery();
         }
+
     }
 
 
@@ -97,9 +112,9 @@ class IndexSqlite : IIndex
 
         SqliteCommand command = connection.CreateCommand();
 
-        using (var transaction = connection.BeginTransaction())
-        {
-            command.Transaction = transaction;
+        // using (var transaction = connection.BeginTransaction())
+        // {
+            // command.Transaction = transaction;
 
             foreach (var stem in entry.StemSet)
             {
@@ -114,8 +129,8 @@ class IndexSqlite : IIndex
                 command.ExecuteNonQuery();
             }
 
-            transaction.Commit();
-        }
+        //     transaction.Commit();
+        // }
 
     }
 
@@ -245,22 +260,20 @@ class IndexSqlite : IIndex
 
             string deleteTextArray = string.Join(",", deletedFiles.Select(x => $"'{x}'"));
 
-            deleteStemsCmd.CommandText = @"
-                DELETE FROM Stems WHERE file_id IN (" + deleteTextArray + @")
-                ;
-            ";
+            // Due to a quirk in sqlite, DELETEs are extremely slow with foreign_keys.
 
-            deleteFilesCmd.CommandText = @"
-                DELETE FROM Files WHERE id IN (" + deleteTextArray + @")
-                ;
-            ";
+            deleteStemsCmd.CommandText = "PRAGMA foreign_keys = 0; DELETE FROM Stems WHERE file_id IN (" + deleteTextArray + "); PRAGMA foreign_keys = 1;";
+            deleteFilesCmd.CommandText = "PRAGMA foreign_keys = 0; DELETE FROM Files WHERE id IN (" + deleteTextArray + "); PRAGMA foreign_keys = 1;";
 
+            // deleteStemsCmd.Parameters.AddWithValue("@fileIds", deletedFiles);
+            // deleteFilesCmd.Parameters.AddWithValue("@fileIds", deletedFiles);
 
+                
             if (deletedFiles.Count > 0)
             {
                 stopwatch.Start();  // !START
 
-                deleteStemsCmd.ExecuteNonQuery();
+                 deleteStemsCmd.ExecuteNonQuery();
 
                 stopwatch.Reset(); 
                 Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteStemsCmd");
@@ -273,7 +286,8 @@ class IndexSqlite : IIndex
                 Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteFilesCmd");
 
             }
-            else if (deletedFiles.Count > 200)
+
+            if (deletedFiles.Count > 200)
             {
                 stopwatch.Start();  // !START
 
@@ -289,7 +303,13 @@ class IndexSqlite : IIndex
 
     public void Finished()
     {
-
+        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
+        {
+            connection.Open();
+            var commitCmd = connection.CreateCommand();
+            commitCmd.CommandText = "COMMIT;";
+            commitCmd.ExecuteNonQuery();
+        }
 
     }
 

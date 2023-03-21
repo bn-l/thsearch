@@ -33,7 +33,6 @@ class Tokenizer: ITokenizer
 
     }
 
-    // TODO: remove special characters, escapes sequences, \n, \t, etc.
     // - Need to remove these and all special characters before spliting.
 
     public List<string> Process(string text)

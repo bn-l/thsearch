@@ -29,10 +29,17 @@ class FileConsumer {
         stopwatch.Start(); // !START
 
         string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
+
+        stopwatch.Stop(); // STOP
+        var extractTime = stopwatch.ElapsedMilliseconds;
+        stopwatch.Reset();
+
+        stopwatch.Start(); // !START
+
         List<string> stems = tokenizer.Process(rawString);
 
         stopwatch.Stop(); // STOP
-        var extractAndStemTime = stopwatch.ElapsedMilliseconds;
+        var stemTime = stopwatch.ElapsedMilliseconds;
         stopwatch.Reset();
 
         stopwatch.Start(); // !START
@@ -45,7 +52,7 @@ class FileConsumer {
         var addingTime = stopwatch.ElapsedMilliseconds;
         stopwatch.Reset();
 
-        Console.WriteLine($"Extracting and stemming: {extractAndStemTime}ms, Adding to index: {addingTime}ms");
+        Console.WriteLine($"Extracting: {extractTime}ms, Stemming: {stemTime}ms, Adding to index: {addingTime}ms");
     
     }
 }

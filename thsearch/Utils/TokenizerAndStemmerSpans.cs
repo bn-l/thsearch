@@ -45,34 +45,30 @@ class TokenizerSpans: ITokenizer
     {
 
 
-        // TODO: 
         // 1. Remove special characters before spliting.
         // 2. Split
         // 3. Remove words 2 characters or less 
         // 4. stop word removal and empty string check
-
-
-        // Examine token for stop words, suffixes, then punctuation chars--create a new span each time
-
-        // Then add to string List stems
+        // 5. Add to string List of stems
+        // 6. return List
 
         List<string> stems = new List<string>();
 
-        foreach (ReadOnlySpan<char> token in text.Tokenize(' '))
-        {
 
-            ReadOnlySpan<char> trimmedToken = RemoveSpecialChars(token);
+        foreach (ReadOnlySpan<char> token in RemoveSpecialChars(text).Tokenize(' '))
+        {   
 
-            // Remove any suffixes from the token
-            ReadOnlySpan<char> stemmedSpan = RemoveSuffixes(trimmedToken);
+            string stemmedString = RemoveSuffixes(token).ToString().ToLower();
 
-            string stemmedString = stemmedSpan.ToString().ToLower();
-
-            if (stopWords.Contains(stemmedString) || string.IsNullOrEmpty(stemmedString))
+            if 
+            (
+                stopWords.Contains(stemmedString) || 
+                string.IsNullOrEmpty(stemmedString) ||
+                stemmedString.Length <= 2
+            )
             {
                 continue;
             }
-
 
 
             stems.Add(stemmedString);
@@ -93,22 +89,25 @@ class TokenizerSpans: ITokenizer
         return token;
     }
 
-    private ReadOnlySpan<char> RemoveSpecialChars(ReadOnlySpan<char> token)
+    private string RemoveSpecialChars(string text)
     {
-        Span<char> outputSpan = new char[token.Length];
+        Span<char> output = new char[text.Length];
 
         int outputIndex = 0;
-        foreach (char c in token)
+        foreach (char c in text)
         {
             if (char.IsLetter(c))
             {
-                outputSpan[outputIndex++] = c;
+                output[outputIndex++] = c;
+            }
+            else
+            {
+                output[outputIndex++] = ' ';
             }
         }
 
-        ReadOnlySpan<char> outPut = outputSpan.Slice(0, outputIndex);
 
-        return outPut;
+        return output.ToString();
     }
 
 }

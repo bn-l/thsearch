@@ -4,12 +4,13 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 class IndexSqlite : IIndex
 {
     private readonly string dbPath;
 
-    private readonly ConcurrentBag<(int fileId, string stem, int occurrences)> stemsToInsert;
+    // private readonly ConcurrentBag<(int fileId, string stem, int occurrences)> stemsToInsert;
 
 
 
@@ -19,7 +20,7 @@ class IndexSqlite : IIndex
 
         if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0) {  CreateDatabase();  }
 
-        stemsToInsert = new ConcurrentBag<(int fileId, string stem, int occurrences)>();
+        // stemsToInsert = new ConcurrentBag<(int fileId, string stem, int occurrences)>();
     
     }
 
@@ -70,7 +71,7 @@ class IndexSqlite : IIndex
 
             // FILES
             SqliteCommand upsertFileCmd = connection.CreateCommand();
-            
+
             upsertFileCmd.CommandText = @"
                 INSERT INTO Files (path, lastmodified)
                 VALUES ($path, $lastmodified)
@@ -85,14 +86,38 @@ class IndexSqlite : IIndex
             //  'SQLite Error 19: 'FOREIGN KEY constraint failed'.'
             var fileId64 = upsertFileCmd.ExecuteScalar();
             fileId = Convert.ToInt32(fileId64);
+
+            AddStems(fileId, entry, connection);
         }
 
-        foreach (var stem in entry.StemSet)
-        {
-            stemsToInsert.Add((fileId, stem, entry.stemFrequency[stem]));
-        }
     }
 
+    private void AddStems(int fileId, FileIndexEntry entry, SqliteConnection connection)
+    {
+
+        SqliteCommand command = connection.CreateCommand();
+
+        using (var transaction = connection.BeginTransaction())
+        {
+            command.Transaction = transaction;
+
+            foreach (var stem in entry.StemSet)
+            {
+                command.Parameters.Clear(); // Clear parameters before adding new ones
+                command.CommandText = $@"
+                    INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences);
+                ";
+                command.Parameters.AddWithValue("$stem", stem);
+                command.Parameters.AddWithValue("$file_id", fileId);
+                command.Parameters.AddWithValue("$occurrences", entry.stemFrequency[stem]);
+
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+
+    }
 
     public bool RecordUpToDate(FileModel file)
     {
@@ -182,74 +207,90 @@ class IndexSqlite : IIndex
 
     public void Prune(List<string> foundFiles)
     {
+        // TODO: Get list of deleted files only, run delete specifically on those files 
+
+        // Get list of deleted files by comparing the list of files in the database to the list of files found in the directory
+
+
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
             connection.Open();
 
-            SqliteCommand checkCmd = connection.CreateCommand();
-            SqliteCommand deleteCmd = connection.CreateCommand();
+            Stopwatch stopwatch = new Stopwatch();
 
-            checkCmd.CommandText = $@"
-                SELECT COUNT(*) FROM Files WHERE path NOT IN ($foundFiles)
+
+
+
+
+        
+            SqliteCommand selectDeletedCmd = connection.CreateCommand();
+            SqliteCommand deleteStemsCmd = connection.CreateCommand();
+            SqliteCommand deleteFilesCmd = connection.CreateCommand();
+            SqliteCommand vacuumCmd = connection.CreateCommand();
+
+
+            selectDeletedCmd.CommandText = @"
+                SELECT id FROM Files WHERE path NOT IN (" + string.Join(",", foundFiles.Select((s, i) => $"'{s}'")) + @")
             ";
-            deleteCmd.CommandText = $@"
-                DELETE FROM Stems
-                WHERE file_id NOT IN (
-                    SELECT id FROM Files WHERE path IN ($foundFiles)
-                );
-                DELETE FROM Files WHERE path NOT IN ($foundFiles);
-                VACUUM;
-            ";
 
-            deleteCmd.Parameters.AddWithValue("$foundFiles",  string.Join(",", foundFiles));
-            checkCmd.Parameters.AddWithValue("$foundFiles",  string.Join(",", foundFiles));
+            vacuumCmd.CommandText = "VACUUM";
 
 
-            // : 'SQLite Error 1: 'too many SQL variables'.'
-            var numberNotInFound = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-            if (numberNotInFound > 100)
+            List<int> deletedFiles = new List<int>();
+            SqliteDataReader reader = selectDeletedCmd.ExecuteReader();
+            while (reader.Read())
             {
-                deleteCmd.ExecuteNonQuery();
+                deletedFiles.Add(reader.GetInt32(0));
             }
+
+            string deleteTextArray = string.Join(",", deletedFiles.Select(x => $"'{x}'"));
+
+            deleteStemsCmd.CommandText = @"
+                DELETE FROM Stems WHERE file_id IN (" + deleteTextArray + @")
+                ;
+            ";
+
+            deleteFilesCmd.CommandText = @"
+                DELETE FROM Files WHERE id IN (" + deleteTextArray + @")
+                ;
+            ";
+
+
+            if (deletedFiles.Count > 0)
+            {
+                stopwatch.Start();  // !START
+
+                deleteStemsCmd.ExecuteNonQuery();
+
+                stopwatch.Reset(); 
+                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteStemsCmd");
+
+                stopwatch.Start();  // !START
+
+                deleteFilesCmd.ExecuteNonQuery();
+
+                stopwatch.Reset(); 
+                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteFilesCmd");
+
+            }
+            else if (deletedFiles.Count > 200)
+            {
+                stopwatch.Start();  // !START
+
+                vacuumCmd.ExecuteNonQuery();
+
+                stopwatch.Reset(); 
+                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run vacuumCmd");
+                stopwatch.Reset(); 
+            }
+            
         }
     }
 
     public void Finished()
     {
-        using (var connection = new SqliteConnection($"Data Source={dbPath}"))
-        {
-            connection.Open();
 
-            SqliteCommand command = connection.CreateCommand();
 
-            // foreach (var chunk in stemsToInsert.Chunk(2000))
-            // {
-
-                using (var transaction = connection.BeginTransaction())
-                {
-                    command.Transaction = transaction;
-
-                    foreach (var (fileId, stem, occurrences) in stemsToInsert)
-                    {
-                        command.Parameters.Clear(); // Clear parameters before adding new ones
-                        command.CommandText = $@"
-                            INSERT OR REPLACE INTO Stems (stem, file_id, occurrences) VALUES ($stem, $file_id, $occurrences);
-                        ";
-                        command.Parameters.AddWithValue("$stem", stem);
-                        command.Parameters.AddWithValue("$file_id", fileId);
-                        command.Parameters.AddWithValue("$occurrences", occurrences);
-
-                        command.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
-                }
-
-            }
-        // }
-
-        stemsToInsert.Clear();
     }
 
 

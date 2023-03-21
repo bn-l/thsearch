@@ -11,15 +11,20 @@ class PdfExtractor : IExtractor
     public string Extract(string path) {
 
         string fullText = "";
-        
-        using (var document = PdfDocument.Open(path))
+        try
         {
-            
-            foreach (var page in document.GetPages())
+            using (var document = PdfDocument.Open(path))
             {
-                fullText += ContentOrderTextExtractor.GetText(page);
-            }
+                
+                foreach (var page in document.GetPages())
+                {
+                    fullText += ContentOrderTextExtractor.GetText(page);
+                }
 
+                return fullText;
+            }
+        } catch (Exception e)
+        {
             return fullText;
         }
 

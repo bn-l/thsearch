@@ -5,7 +5,7 @@ using HtmlAgilityPack;
 class HtmlExtractor : IExtractor 
 {
 
-    public string FileIdentifier => "html";
+    public string FileIdentifier => ".html";
 
     public string Extract(string path) {
 

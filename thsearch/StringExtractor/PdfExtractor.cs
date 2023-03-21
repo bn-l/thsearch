@@ -6,7 +6,7 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
 class PdfExtractor : IExtractor 
 {
-    public string FileIdentifier => "pdf";
+    public string FileIdentifier => ".pdf";
 
     public string Extract(string path) {
 

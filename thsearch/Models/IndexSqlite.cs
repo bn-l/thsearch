@@ -59,10 +59,6 @@ class IndexSqlite : IIndex
     // Add can be reused as update 
     // Insert can add to a concurrent bag after all the updates are made. It will get the highest id number, and then add to the bag, incrementing that number as the id.
 
-    public void Insert(string path, FileIndexEntry entry)
-    {
-        ;
-    }
 
     public void Add(string path, FileIndexEntry entry)
     {
@@ -74,8 +70,7 @@ class IndexSqlite : IIndex
 
             // FILES
             SqliteCommand upsertFileCmd = connection.CreateCommand();
-
-            // TODO: This query is very slow
+            
             upsertFileCmd.CommandText = @"
                 INSERT INTO Files (path, lastmodified)
                 VALUES ($path, $lastmodified)

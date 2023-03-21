@@ -17,9 +17,12 @@ class Program
         string configName = "thsearch";
         string configPath;
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
+        int numberOfResults = 10;
+        bool fuzzySearch = false;
 
-        // TODO: By default should only show 10 results. Command line arg "all" will show all.
-
+ 
+        // TODO: Add Fuzzy option that uses the custom string contains
+        // TODO: Change argument parsing so that a class "ArgsParser" parses arguments on construction and modifies it's properties accordingly
 
         switch (args.Length)
         {
@@ -32,11 +35,24 @@ class Program
                 searchString = args[0];
 
                 break;
-            // specifying a config name 
+            // specifying a config name. Or none to use the default (and optionally specify "all" results)
             case 2:
                 searchString = args[0];
+                if (args[1] == "all") 
+                {
+                    numberOfResults = -1;
+                }
+                else {
+                    configName = args[1];
+                }
+                break;
+            case 3:
+                searchString = args[0];
                 configName = args[1];
-
+                if (args[2] == "all") 
+                {
+                    numberOfResults = -1;
+                }
                 break;
             default:
                 Console.WriteLine("Error: Too many arguments");
@@ -46,9 +62,10 @@ class Program
         configPath = Path.Combine(currentDirectory, configName + ".txt");
         ConfigFileParser config = new ConfigFileParser(configPath);
 
-        IIndex index = new IndexSqlite(Path.Combine(currentDirectory, "index.sqlite"));
+        IIndex index = new IndexSqlite(Path.Combine(currentDirectory, configName + ".sqlite"));
 
         // TODO: Test the extractors on all types
+
 
         TxtExtractor txtExtractor = new TxtExtractor();
         PdfExtractor pdfExtractor = new PdfExtractor();
@@ -117,9 +134,15 @@ class Program
         stopwatch.Start(); // !START
 
         index.Finished();
+
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to add stems");
+        stopwatch.Reset(); // RESET 
+
+        stopwatch.Start(); // !START
+
         index.Prune(foundFiles);
     
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to add stems and prune");
+        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
         stopwatch.Reset(); // RESET 
 
         stopwatch.Start();  // !START
@@ -134,11 +157,21 @@ class Program
 
         List<string> results = searcher.TfIdf(index, searchString).Select(id => index.GetPath(id)).ToList();
 
-
-        foreach (int idResult in searcher.TfIdf(index, searchString))
+        if (numberOfResults == -1)
         {
-            Console.WriteLine(index.GetPath(idResult));
+            foreach (string result in results)
+            {
+                Console.WriteLine(result);
+            }
         }
+        else
+        {
+            for (int i = 0; i < numberOfResults && i < results.Count; i++)
+            {
+                Console.WriteLine(results[i]);
+            }
+        }
+
 
         Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to search (according to Program.cs)");
         stopwatch.Reset(); // RESET 

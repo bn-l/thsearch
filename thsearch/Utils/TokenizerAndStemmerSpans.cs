@@ -4,12 +4,11 @@ using CommunityToolkit.HighPerformance;
 using System.Diagnostics;
 using System.Linq;
 
-// TODO: Fix this and test out its perfomance vs the string.split tokenizer
 
 class TokenizerSpans: ITokenizer
 {
 
-    private readonly char[] punctuationChars;
+    private readonly char[] specialChars;
 
     private readonly string[] suffixes;
 
@@ -20,7 +19,7 @@ class TokenizerSpans: ITokenizer
     public TokenizerSpans(char[] trimChars = null, string[] suffixes = null, HashSet<string> stopWords = null)
     {
 
-        this.punctuationChars = trimChars ??
+        this.specialChars = trimChars ??
             Enumerable
                 .Range(char.MinValue, char.MaxValue - char.MinValue + 1)
                 .Where(c => !char.IsLetter((char)c))
@@ -45,9 +44,13 @@ class TokenizerSpans: ITokenizer
     public List<string> Process(string text)
     {
 
-        // TODO: Special characters are converted to escape sequences. E.g. ë becomes \u00EB
 
-        // TODO: Stop word removal
+        // TODO: 
+        // 1. Remove special characters before spliting.
+        // 2. Split
+        // 3. Remove words 2 characters or less 
+        // 4. stop word removal and empty string check
+
 
         // Examine token for stop words, suffixes, then punctuation chars--create a new span each time
 
@@ -57,21 +60,20 @@ class TokenizerSpans: ITokenizer
 
         foreach (ReadOnlySpan<char> token in text.Tokenize(' '))
         {
-            // Remove any leading or trailing punctuation characters from the token
-            // ReadOnlySpan<char> trimmedToken = token.Trim(punctuationChars);
 
-            ReadOnlySpan<char> trimmedToken = RemovePunctuation(token);
+            ReadOnlySpan<char> trimmedToken = RemoveSpecialChars(token);
 
             // Remove any suffixes from the token
             ReadOnlySpan<char> stemmedSpan = RemoveSuffixes(trimmedToken);
 
             string stemmedString = stemmedSpan.ToString().ToLower();
 
-            // Check if the resulting token is a stop word
-            if (stopWords.Contains(stemmedString))
+            if (stopWords.Contains(stemmedString) || string.IsNullOrEmpty(stemmedString))
             {
                 continue;
             }
+
+
 
             stems.Add(stemmedString);
         }
@@ -91,7 +93,7 @@ class TokenizerSpans: ITokenizer
         return token;
     }
 
-    private ReadOnlySpan<char> RemovePunctuation(ReadOnlySpan<char> token)
+    private ReadOnlySpan<char> RemoveSpecialChars(ReadOnlySpan<char> token)
     {
         Span<char> outputSpan = new char[token.Length];
 

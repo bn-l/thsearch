@@ -5,7 +5,7 @@ interface IIndex
 {
     void Add(string path, FileIndexEntry entry);
 
-    // Deletes all entries in the Files and Stems table where the path is not in foundFiles
+    // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
     void Prune(List<string> foundFiles);
 
     // If file exists in the Files and is not out of date, return true

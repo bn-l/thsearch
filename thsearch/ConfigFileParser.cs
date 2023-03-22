@@ -5,17 +5,16 @@ namespace thsearch;
 
 public class ConfigFileParser
 {
-    public List<string> IncludedDirectories { get; private set; }
-    public List<string> ExcludedDirectories { get; private set; }
-    public List<string> FileExtensions { get; private set; }
+    public string DBLocation { get; }
+    public List<string> IncludedDirectories { get; private set; } = new List<string>();
+    public List<string> ExcludedDirectories { get; private set; }  = new List<string>();
+    public List<string> FileExtensions { get; private set; } = new List<string>();
 
     char dirSeparatorChar = Path.DirectorySeparatorChar;
 
     public ConfigFileParser(string filePath)
     {
-        IncludedDirectories = new List<string>();
-        ExcludedDirectories = new List<string>();
-        FileExtensions = new List<string>();
+
         using (var reader = new StreamReader(filePath))
         {
             while (!reader.EndOfStream)
@@ -35,6 +34,10 @@ public class ConfigFileParser
                     line = line.TrimEnd(dirSeparatorChar);
                 }
 
+                if (line.StartsWith("~"))
+                {
+                    DBLocation = Path.GetFullPath(line.TrimStart('~'));
+                }
                 if (line.StartsWith("+"))
                 {
                     IncludedDirectories.Add(Path.GetFullPath(line.TrimStart('+')));

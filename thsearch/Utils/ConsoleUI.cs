@@ -1,80 +1,19 @@
-namespace thsearch;
-using System;
-using System.Collections.Generic;
-
-public class ConsoleUI
+class ConsoleProgress : IProgress<float>
 {
-    private int loadingCount;
+    private int BarWidth = 20;
 
-    public void UpdateLoadCount(int count)
+    public void Report(float value)
     {
-        loadingCount = count;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write($"File Queue: {loadingCount}");
+        int progress = (int)(value * 100);
+        int completed = (int)(value * BarWidth);
+        int remaining = BarWidth - completed;
+        string progressBar = $"[{new string('#', completed)}{new string('-', remaining)}]";
+
+        Console.Write($"\r{progressBar} {progress}%");
     }
 
-    public void DisplayResults(List<string> results)
+    public void Finished()
     {
-        Console.Clear();
-        Console.WriteLine("Results:");
-        Console.WriteLine();
-
-        int index = 0;
-        int pageSize = Console.WindowHeight - 3;
-
-        while (true)
-        {
-            for (int i = 0; i < pageSize && index < results.Count; i++, index++)
-            {
-                Console.WriteLine(results[index]);
-            }
-
-            Console.SetCursorPosition(0, Console.WindowHeight - 2);
-            Console.Write($"Page {index / pageSize + 1} / {results.Count / pageSize + 1}     ");
-
-            ConsoleKeyInfo key = Console.ReadKey(true);
-
-            if (key.Key == ConsoleKey.UpArrow)
-            {
-                if (index > 0)
-                {
-                    index--;
-                    Console.SetCursorPosition(0, Console.CursorTop - 1);
-                }
-            }
-            else if (key.Key == ConsoleKey.DownArrow)
-            {
-                if (index < results.Count - 1)
-                {
-                    index++;
-                    Console.SetCursorPosition(0, Console.CursorTop + 1);
-                }
-            }
-            else if (key.Key == ConsoleKey.LeftArrow)
-            {
-                index -= pageSize;
-
-                if (index < 0)
-                {
-                    index = 0;
-                }
-            }
-            else if (key.Key == ConsoleKey.RightArrow)
-            {
-                index += pageSize;
-
-                if (index >= results.Count)
-                {
-                    index = results.Count - 1;
-                }
-            }
-            else if (key.Key == ConsoleKey.Escape || key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.C)
-            {
-                break;
-            }
-        }
-
-        Console.Clear();
-        UpdateLoadCount(loadingCount);
+        // Clear the loading bar
     }
 }

@@ -17,7 +17,6 @@ class StringExtractor
 
     public string Extract(string path, string fileIdentifier)
     {
-        // TODO: Try catch, returning an emptry string on failure
 
         // Iterates over this.extractors calling the extractor's extract method where fileIdentifier == extractor.FileIdentifier
         foreach (var extractor in this.extractors)

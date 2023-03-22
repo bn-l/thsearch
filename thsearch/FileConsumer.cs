@@ -20,39 +20,50 @@ class FileConsumer {
         this.tokenizer = tokenizer;
     }
 
-    public void Consume(FileModel file) {
+    public bool Consume(FileModel file) {
 
         Stopwatch stopwatch = new Stopwatch();
 
-        if (this.index.RecordUpToDate(file)) return;
+        if (this.index.RecordUpToDate(file)) return true;
         
-        stopwatch.Start(); // !START
+        try 
+        {
+            stopwatch.Start(); // !START
 
-        string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
+            string rawString = stringExtractor.Extract(file.Path, Path.GetExtension(file.Path));
 
-        stopwatch.Stop(); // STOP
-        var extractTime = stopwatch.ElapsedMilliseconds;
-        stopwatch.Reset();
+            stopwatch.Stop(); // STOP
+            var extractTime = stopwatch.ElapsedMilliseconds;
+            stopwatch.Reset();
 
-        stopwatch.Start(); // !START
+            stopwatch.Start(); // !START
 
-        List<string> stems = tokenizer.Process(rawString);
+            List<string> stems = tokenizer.Process(rawString);
 
-        stopwatch.Stop(); // STOP
-        var stemTime = stopwatch.ElapsedMilliseconds;
-        stopwatch.Reset();
+            stopwatch.Stop(); // STOP
+            var stemTime = stopwatch.ElapsedMilliseconds;
+            stopwatch.Reset();
 
-        stopwatch.Start(); // !START
+            stopwatch.Start(); // !START
 
-        FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
-        this.index.Add(file.Path, entry);
+            FileIndexEntry entry = new FileIndexEntry(file.LastModified, stems);
+            this.index.Add(file.Path, entry);
 
 
-        stopwatch.Stop(); // STOP
-        var addingTime = stopwatch.ElapsedMilliseconds;
-        stopwatch.Reset();
+            stopwatch.Stop(); // STOP
+            var addingTime = stopwatch.ElapsedMilliseconds;
+            stopwatch.Reset();
 
-        Console.WriteLine($"Extracting: {extractTime}ms, Stemming: {stemTime}ms, Adding to index: {addingTime}ms");
+            Console.WriteLine($"Extracting: {extractTime}ms, Stemming: {stemTime}ms, Adding to index: {addingTime}ms");
+
+            return true;
+
+        } catch(Exception ex)
+        {
+            Debug.WriteLine($"Error consuming {file.Path}. Message: {ex.Message}");
+            return false;
+        }
+
     
     }
 }

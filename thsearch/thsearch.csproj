@@ -30,6 +30,7 @@ as follows: thsearch.exe searchterm. </Description>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.4" />
     <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
     <PackageReference Include="PdfPig" Version="0.1.7" />
+    <PackageReference Include="ShellProgressBar" Version="5.2.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
     <PackageReference Include="Terminal.Gui" Version="1.10.0" />
   </ItemGroup>

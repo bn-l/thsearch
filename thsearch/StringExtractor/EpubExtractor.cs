@@ -8,14 +8,8 @@ class EpubExtractor : IExtractor
 
     public string Extract(string path) {
         
-        try
-        {
-            return EpubReader.Read(path).ToPlainText();
-        }
-        catch
-        {
-            return "";
-        }
+
+        return EpubReader.Read(path).ToPlainText();
 
     }
 }

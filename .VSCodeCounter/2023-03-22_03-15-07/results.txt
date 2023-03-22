@@ -1,0 +1,68 @@
+Date : 2023-03-22 03:15:07
+Directory : c:\Users\x230\Desktop\thsearch
+Total : 31 files,  1123 codes, 164 comments, 474 blanks, all 1761 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C#       |         26 |      1,010 |        161 |        437 |      1,608 |
+| XML      |          3 |         72 |          3 |         12 |         87 |
+| Markdown |          1 |         33 |          0 |         25 |         58 |
+| JSON     |          1 |          8 |          0 |          0 |          8 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                    | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                       |         31 |      1,123 |        164 |        474 |      1,761 |
+| . (Files)                                                                               |          1 |         33 |          0 |         25 |         58 |
+| Tests                                                                                   |          4 |        227 |         41 |         88 |        356 |
+| thsearch                                                                                |         26 |        863 |        123 |        361 |      1,347 |
+| thsearch (Files)                                                                        |          5 |        290 |         24 |        102 |        416 |
+| thsearch\Models                                                                         |          6 |        265 |         56 |        114 |        435 |
+| thsearch\Properties                                                                     |          2 |         21 |          3 |          0 |         24 |
+| thsearch\Properties (Files)                                                             |          1 |          8 |          0 |          0 |          8 |
+| thsearch\Properties\PublishProfiles                                                     |          1 |         13 |          3 |          0 |         16 |
+| thsearch\StringExtractor                                                                |          7 |         82 |          9 |         49 |        140 |
+| thsearch\Utils                                                                          |          6 |        205 |         31 |         96 |        332 |
++-----------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\x230\Desktop\thsearch\README.md                                                | Markdown |         33 |          0 |         25 |         58 |
+| c:\Users\x230\Desktop\thsearch\Tests\ConsoleOutput.cs                                   | C#       |         23 |          1 |          9 |         33 |
+| c:\Users\x230\Desktop\thsearch\Tests\Tests.csproj                                       | XML      |         20 |          0 |          5 |         25 |
+| c:\Users\x230\Desktop\thsearch\Tests\Thsearch_function_tests.cs                         | C#       |        173 |         40 |         72 |        285 |
+| c:\Users\x230\Desktop\thsearch\Tests\UnitTest11.cs                                      | C#       |         11 |          0 |          2 |         13 |
+| c:\Users\x230\Desktop\thsearch\thsearch\ConfigFileParser.cs                             | C#       |         59 |          2 |         15 |         76 |
+| c:\Users\x230\Desktop\thsearch\thsearch\FileConsumer.cs                                 | C#       |         43 |          3 |         23 |         69 |
+| c:\Users\x230\Desktop\thsearch\thsearch\FileProducer.cs                                 | C#       |         34 |          1 |          9 |         44 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\FileIndexEntry.cs                        | C#       |         26 |         16 |          7 |         49 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\FileModel.cs                             | C#       |         10 |          1 |          5 |         16 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\IIndex.cs                                | C#       |         11 |          5 |          8 |         24 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\IndexSqlite.cs                           | C#       |        199 |         17 |         83 |        299 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\InverseIndexEntry.cs                     | C#       |         13 |         17 |          9 |         39 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Models\RecordInfo.cs                            | C#       |          6 |          0 |          2 |          8 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Program.cs                                      | C#       |        115 |         18 |         48 |        181 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Properties\PublishProfiles\FolderProfile.pubxml | XML      |         13 |          3 |          0 |         16 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Properties\launchSettings.json                  | JSON     |          8 |          0 |          0 |          8 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\EpubExtractor.cs                | C#       |          9 |          0 |          6 |         15 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\HtmlExtractor.cs                | C#       |         11 |          2 |          8 |         21 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\IExtractor.cs                   | C#       |          4 |          1 |          4 |          9 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\MhtmlExtractor.cs               | C#       |         11 |          2 |          8 |         21 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\PdfExtractor.cs                 | C#       |         18 |          1 |          9 |         28 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\StringExtractor.cs              | C#       |         22 |          2 |         11 |         35 |
+| c:\Users\x230\Desktop\thsearch\thsearch\StringExtractor\TxtExtractor.cs                 | C#       |          7 |          1 |          3 |         11 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\ConsoleUI.cs                              | C#       |         15 |          1 |          3 |         19 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\ITokenizer.cs                             | C#       |          5 |          0 |          4 |          9 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\Searcher.cs                               | C#       |         41 |         20 |         32 |         93 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\SpanCharEqualityComparer.cs               | C#       |         20 |          0 |          5 |         25 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\Tokenizer.cs                              | C#       |         48 |          4 |         21 |         73 |
+| c:\Users\x230\Desktop\thsearch\thsearch\Utils\TokenizerAndStemmerSpans.cs               | C#       |         76 |          6 |         31 |        113 |
+| c:\Users\x230\Desktop\thsearch\thsearch\thsearch.csproj                                 | XML      |         39 |          0 |          7 |         46 |
+| Total                                                                                   |          |      1,123 |        164 |        474 |      1,761 |
++-----------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

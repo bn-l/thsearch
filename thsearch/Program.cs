@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Globalization;
 using System.Diagnostics;
 
-
 class Program
 {
 
@@ -18,11 +17,7 @@ class Program
         string configPath;
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
         int numberOfResults = 10;
-        bool fuzzySearch = false;
 
- 
-        // TODO: Add Fuzzy option that uses the custom string contains
-        // TODO: Change argument parsing so that a class "ArgsParser" parses arguments on construction and modifies it's properties accordingly
 
         switch (args.Length)
         {
@@ -62,9 +57,11 @@ class Program
         configPath = Path.Combine(currentDirectory, configName + ".txt");
         ConfigFileParser config = new ConfigFileParser(configPath);
 
-        IIndex index = new IndexSqlite(Path.Combine(currentDirectory, configName + ".sqlite"));
+        string dbLocation = string.IsNullOrEmpty(config.DBLocation) ? 
+            Path.Combine(currentDirectory, configName + ".sqlite") :
+            Path.Combine(config.DBLocation, configName + ".sqlite");
 
-        // TODO: Test the extractors on all types
+        IIndex index = new IndexSqlite(dbLocation);
 
 
         TxtExtractor txtExtractor = new TxtExtractor();
@@ -79,31 +76,24 @@ class Program
 
         FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizer);
 
-
         BlockingCollection<FileModel> filesQueue = new BlockingCollection<FileModel>();
+
         // used for pruning later
         List<string> foundFiles = new List<string>();
 
 
-        // Create the producer task
         var producerTask = Task.Run(() =>
         {
-            // file producer is a generator that produces a File
             foreach (FileModel file in fileProducer)
             {
                 filesQueue.Add(file);
-                foundFiles.Add(file.Path);
             }
             filesQueue.CompleteAdding();
         });
 
-        // Get the number of available processors
         int processorCount = Environment.ProcessorCount - 1 | 1;
-
-        // FileConsumer instance called with the Index and InverseIndex instances as references
-
-        // Create the consumer tasks
         var consumerTasks = new Task[processorCount];
+
         for (int i = 0; i < processorCount; i++)
         {
             consumerTasks[i] = Task.Run(() =>
@@ -112,14 +102,12 @@ class Program
                 //  if IsCompleted is false the loop blocks until an item becomes
                 foreach (FileModel file in filesQueue.GetConsumingEnumerable())
                 {
-                    // Search for the search string in the file
-                    fileConsumer.Consume(file);
+
+                    if(fileConsumer.Consume(file)) foundFiles.Add(file.Path);
                 }
             });
         }
 
-        // Wait for the producer task to complete
-        // producerTask.Wait();
 
         Stopwatch stopwatch = new Stopwatch();
 
@@ -130,24 +118,18 @@ class Program
         Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to process all files");
         stopwatch.Reset(); // RESET 
 
-        // Compare the files that were actually found vs what we have saved in the index. Some parts of the index might need snipping off
+
         stopwatch.Start(); // !START
 
         index.Finished();
 
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to add stems");
-        stopwatch.Reset(); // RESET 
 
         stopwatch.Start(); // !START
+
 
         index.Prune(foundFiles);
     
         Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to prune");
-        stopwatch.Reset(); // RESET 
-
-        stopwatch.Start();  // !START
-
-        Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to save");
         stopwatch.Reset(); // RESET 
 
         Searcher searcher = new Searcher(tokenizer);

@@ -1,6 +1,6 @@
 <img src="thsearch/Assets/logo2-1024.png" alt="logo" />
 
-# thSearch 
+# thsearch 
 
 ### 👉NEW!!!
 
@@ -71,7 +71,9 @@ Tip 2: Add it to windows antimalware exclusions (can build it from source—no t
 
 Grep / content searching is expensive so the first step is to not waste time on irrelevant files. The power of thSearch is that you search only specific extensions and and locations.
 
-The just-in-time indexing uses multiple threads to extract and stem documents so that, even for many large files, the indexing performance is acceptable. It also means that a background indexing task doesn't need to be maintained. The drawbacks are that initial searches, and searches after many changes will be slow. Versus the speed of grep though, this is acceptable.
+The just-in-time indexing uses multiple threads, and a producer and consumer design to extract and stem documents so that, even for many large files, the indexing performance is acceptable. It also means that a background indexing task doesn't need to be maintained. The drawbacks are that initial searches and searches after many changes will be slow. Versus the speed of grep this is acceptable.
+
+The stemming logic is written from scratch and uses no libraries. It makes use of spans to increase performance. 
 
 ### Platform
 

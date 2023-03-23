@@ -25,7 +25,7 @@ class Program
         {
             // without args
             case 0:
-                Console.WriteLine("\nUsage: thsearch.exe <search string> <config file> \n\n Note: Config file defaults to thsearch.txt in the same directory as the exe \n\n Config format (each on new line):\n\n   +C:\\some dir to included\\\n   -C:\\some dir to exclude\\\n   >ext\n\n");
+                Console.WriteLine("\nUsage: thsearch.exe <search string> [config file] [all] \n\n Note: Config file defaults to thsearch.txt in the same directory as the exe \n\n Config format (each on new line):\n\n   +C:\\some dir to included\\\n   -C:\\some dir to exclude\\\n   >ext\n\n");
                 return;
             // only a search string arg
             case 1: 

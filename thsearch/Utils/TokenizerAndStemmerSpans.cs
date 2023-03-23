@@ -44,7 +44,6 @@ class TokenizerSpans: ITokenizer
     public List<string> Process(string text)
     {
 
-
         // 1. Remove special characters before spliting.
         // 2. Split
         // 3. Remove words 2 characters or less 

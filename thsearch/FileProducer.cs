@@ -2,7 +2,7 @@ namespace thsearch;
 using System.Collections;
 
 
-// FileProducer is a generator that is initialized with three lists of stringss: included directories, excluded directories and file extensions. It will use the list of file extensions to find suitable files in the included directories (which it searches recursively). It will check the path if string.Contains an element from excluded directories.
+// FileProducer is a generator that is initialized with three lists of strings: included directories, excluded directories and file extensions. It will use the list of file extensions to find suitable files in the included directories (which it searches recursively). It will check the path if string.Contains an element from excluded directories.
 
 class FileProducer : IEnumerable<FileModel>
 {
@@ -23,7 +23,7 @@ class FileProducer : IEnumerable<FileModel>
     {
         foreach (string directory in includedDirectories)
         {
-            foreach (string filePath in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
+            foreach (string filePath in FindFilesGently(directory))
             {
                 if (fileExtensions.Any(filePath.EndsWith))
                 {
@@ -33,6 +33,24 @@ class FileProducer : IEnumerable<FileModel>
                     }
                 }
             }
+            
+        }
+    }
+
+    //see: https://stackoverflow.com/a/65059596, for why this is necessary
+    private IEnumerable<string> FindFilesGently(string directory)
+    {
+        IEnumerator<string> fEnum;
+        try
+        {
+            fEnum = Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories).GetEnumerator();
+        }
+        catch (UnauthorizedAccessException) { yield break; }
+        while (true)
+        {
+            try { if (!fEnum.MoveNext()) break; }
+            catch (UnauthorizedAccessException) { continue; }
+            yield return fEnum.Current;
         }
     }
 

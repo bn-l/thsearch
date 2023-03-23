@@ -8,12 +8,14 @@ class FileProducer : IEnumerable<FileModel>
 {
     private List<string> includedDirectories;
     private List<string> excludedDirectories;
+    private List<string> excludedWords;
     private List<string> fileExtensions;
 
-    public FileProducer(List<string> includedDirectories, List<string> excludedDirectories, List<string> fileExtensions)
+    public FileProducer(List<string> includedDirectories, List<string> excludedDirectories, List<string> fileExtensions, List<string> excludedWords)
     {
         this.includedDirectories = includedDirectories;
         this.excludedDirectories = excludedDirectories;
+        this.excludedWords = excludedWords;
         this.fileExtensions = fileExtensions;
     }
 
@@ -25,8 +27,7 @@ class FileProducer : IEnumerable<FileModel>
             {
                 if (fileExtensions.Any(filePath.EndsWith))
                 {
-                    
-                    if (!excludedDirectories.Any(filePath.Contains))
+                    if (!excludedDirectories.Any(filePath.Contains) && !excludedWords.Any(filePath.Contains))
                     {
                         yield return new FileModel(filePath);
                     }

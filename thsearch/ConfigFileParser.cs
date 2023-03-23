@@ -6,8 +6,11 @@ namespace thsearch;
 public class ConfigFileParser
 {
     public string DBLocation { get; }
+    // Included and excluded are case sensitive for cross platform compat
     public List<string> IncludedDirectories { get; private set; } = new List<string>();
     public List<string> ExcludedDirectories { get; private set; }  = new List<string>();
+    // If the file path contains this word it should not be included. It is case sensitve.
+    public List<string> ExcludedWords { get; private set; }  = new List<string>();
     public List<string> FileExtensions { get; private set; } = new List<string>();
 
     char dirSeparatorChar = Path.DirectorySeparatorChar;
@@ -45,6 +48,10 @@ public class ConfigFileParser
                 else if (line.StartsWith("-"))
                 {
                     ExcludedDirectories.Add(Path.GetFullPath(line.TrimStart('-')));
+                }
+                else if (line.StartsWith("#"))
+                {
+                    ExcludedWords.Add(line.TrimStart('#'));
                 }
                 else if (line.StartsWith(">"))
                 {

@@ -3,7 +3,6 @@ namespace thsearch;
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 
 // Good post on not using AddWithValue: https://web.archive.org/web/20230128073012/https://blogs.msmvps.com/jcoehoorn/blog/2014/05/12/can-we-stop-using-addwithvalue-already/
@@ -12,16 +11,11 @@ class IndexSqlite : IIndex
 {
     private readonly string dbPath;
 
-    // private readonly ConcurrentBag<(int fileId, string stem, int occurrences)> stemsToInsert;
-
     public IndexSqlite(string path)
     {
         this.dbPath = path;
 
         if (!File.Exists(dbPath) || new FileInfo(dbPath).Length == 0) {  CreateDatabase();  }
-
-        // stemsToInsert = new ConcurrentBag<(int fileId, string stem, int occurrences)>();
-        
 
     
     }
@@ -62,11 +56,6 @@ class IndexSqlite : IIndex
         }
 
     }
-
-
-    // TODO: Split into update and insert
-    // Add can be reused as update 
-    // Insert can add to a concurrent bag after all the updates are made. It will get the highest id number, and then add to the bag, incrementing that number as the id.
 
 
     public void Add(string path, FileIndexEntry entry)
@@ -215,10 +204,8 @@ class IndexSqlite : IIndex
 
     public void Prune(List<string> foundFiles)
     {
-        // TODO: Get list of deleted files only, run delete specifically on those files 
 
-        // Get list of deleted files by comparing the list of files in the database to the list of files found in the directory
-
+        // Get list of deleted files doing a set minus of the list of files in the database minus the files found in the directory. The remaining set must be the files that were deleted or moved. 
 
         using (var connection = new SqliteConnection($"Data Source={dbPath}"))
         {
@@ -260,31 +247,15 @@ class IndexSqlite : IIndex
            
             if (deletedFileIds.Count > 0)
             {
-                stopwatch.Start();  // !START
 
-                 deleteStemsCmd.ExecuteNonQuery();
-
-                stopwatch.Reset(); 
-                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteStemsCmd");
-
-                stopwatch.Start();  // !START
-
+                deleteStemsCmd.ExecuteNonQuery();
                 deleteFilesCmd.ExecuteNonQuery();
-
-                stopwatch.Reset(); 
-                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run deleteFilesCmd");
-
             }
 
             if (deletedFileIds.Count > 200)
             {
-                stopwatch.Start();  // !START
 
                 vacuumCmd.ExecuteNonQuery();
-
-                stopwatch.Reset(); 
-                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to run vacuumCmd");
-                stopwatch.Reset(); 
             }
             
         }

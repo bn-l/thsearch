@@ -22,8 +22,6 @@ class Searcher {
     public int[] TfIdf(IIndex index, string query)
     {
 
-        Stopwatch stopwatch = new Stopwatch();
-
         if(string.IsNullOrEmpty(query)) throw new ArgumentException("Query cannot be null or empty");
 
        
@@ -39,8 +37,6 @@ class Searcher {
             // try get value and out it. If it's not there, skip this iteration (continue)
 
             if (!index.TryLookUpStem(queryToken, out List<(int, int)> occurrences)) continue;
-
-            Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds} ms to lookup {queryToken}");
 
             int totalDocs = index.GetFileCount();
             int matchingDocs = occurrences.Count;
@@ -60,8 +56,6 @@ class Searcher {
             }
 
         }
-
-        Console.WriteLine($"Search in total took {stopwatch.ElapsedMilliseconds} ms");
 
         return resultScores
                 .OrderByDescending(pair => pair.Value)

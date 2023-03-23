@@ -18,6 +18,8 @@ class Program
         string currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
         int numberOfResults = 10;
 
+        // TODO: Tests
+        // TODO: File access issues
 
         switch (args.Length)
         {
@@ -54,7 +56,9 @@ class Program
                 return;                
         }
 
+
         configPath = Path.Combine(currentDirectory, configName + ".txt");
+
         ConfigFileParser config = new ConfigFileParser(configPath);
 
         string dbLocation = string.IsNullOrEmpty(config.DBLocation) ? 
@@ -72,7 +76,8 @@ class Program
 
         ITokenizer tokenizer = new TokenizerSpans();
 
-        FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions);
+        FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions, config.ExcludedWords);
+        
 
         FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizer);
 

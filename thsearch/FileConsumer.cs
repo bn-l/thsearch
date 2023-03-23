@@ -60,7 +60,7 @@ class FileConsumer {
 
         } catch(Exception ex)
         {
-            Debug.WriteLine($"Error consuming {file.Path}. Message: {ex.Message}");
+            Debug.WriteLine($"Error consuming {file.Path} (no need to worry). Message: {ex.Message}");
             return false;
         }
 

@@ -19,7 +19,7 @@ class Program
         int numberOfResults = 10;
 
         // TODO: Tests
-        // TODO: File access issues
+        // TODO: Add support for: csv, docx, xlsx, pptx
 
         switch (args.Length)
         {
@@ -56,7 +56,6 @@ class Program
                 return;                
         }
 
-
         configPath = Path.Combine(currentDirectory, configName + ".txt");
 
         ConfigFileParser config = new ConfigFileParser(configPath);
@@ -67,7 +66,6 @@ class Program
 
         IIndex index = new IndexSqlite(dbLocation);
 
-
         TxtExtractor txtExtractor = new TxtExtractor();
         PdfExtractor pdfExtractor = new PdfExtractor();
         HtmlExtractor htmlExtractor = new HtmlExtractor();
@@ -77,7 +75,6 @@ class Program
         ITokenizer tokenizer = new TokenizerSpans();
 
         FileProducer fileProducer = new FileProducer (config.IncludedDirectories, config.ExcludedDirectories, config.FileExtensions, config.ExcludedWords);
-        
 
         FileConsumer fileConsumer = new FileConsumer(index, stringExtractor, tokenizer);
 
@@ -85,7 +82,6 @@ class Program
 
         // used for pruning later
         List<string> foundFiles = new List<string>();
-
 
         var producerTask = Task.Run(() =>
         {

@@ -2,8 +2,6 @@
 
 # thsearch 
 
-### 👉NEW!!!
-
 Multithreaded, just in time indexed, content search of files in specified folders. Like grep but faster and with the search results ranked. Support for indexing pdfs, epubs, html (or xml in general), mhtml (single file saved web page) and plain text.
 
 ### Why?
